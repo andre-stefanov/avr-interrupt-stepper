@@ -12,7 +12,6 @@ private:
 
     static void init(const uint8_t mode)
     {
-		DDRB = 0xFF;
         _out_reg = portOutputRegister(digitalPinToPort(PIN));
         _mode_reg = portModeRegister(digitalPinToPort(PIN));
         _bit = digitalPinToBitMask(PIN);

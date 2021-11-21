@@ -1,42 +1,59 @@
-/*
-* InterruptStepper.cpp
-*
-* Created: 10.07.2021 13:05:41
-* Author : Andre
-*/
-
-#define SPR (400 * 8)
-#define EARTH_SPEED (7.2921150 / 100000)
-#define TRANSMISSION 35.46611505122143
+#define SPR (400LL * 64LL)
+#define SIDEREAL (86164.0905f)
+#define TRANSMISSION (35.46611505122143)
 
 #include <Arduino.h>
 
 #include "FastPin.h"
-#include "PreciseInterrupt.h"
+#include "TimerInterrupt.h"
 #include "InterruptStepper.h"
+
+#define RA_RAMP_LEVELS 64
+
+#define PIN_STEP 53
+
+void step()
+{
+	FastPin<PIN_STEP>::pulse();
+	// digitalWrite(PIN_STEP, HIGH);
+	// digitalWrite(PIN_STEP, LOW);
+}
+
+using InterruptRA = TimerInterrupt<TIMER_1>;
+
+namespace axis {
+	typedef InterruptStepper<InterruptRA, RA_RAMP_LEVELS> ra;
+}
 
 void setup()
 {
-	FastPin<60>::output();
-	FastPin<54>::output();
-	FastPin<38>::output();
-	FastPin<38>::low();
+	// FastPin<60>::output();
+	FastPin<PIN_STEP>::output();
+	
+	// FastPin<38>::output();
+	// FastPin<38>::low();
 
-	isr1.init();
+	InterruptRA::init();
+	// InterruptRA::setCallback(step);
+	// InterruptRA::setFrequency(TRANSMISSION * SPR / SIDEREAL);
 
-	// float tracking_speed = TRANSMISSION * EARTH_SPEED; // tracking speed
+	// tracking speed in deg
+	float tracking_speed = TRANSMISSION * SPR / SIDEREAL;
+	// slew at full stepper speed (600 RPM)
 	float slewing_speed = DEG_TO_RAD * 4 * TRANSMISSION * 8;
 
-	float speed = slewing_speed;
-	InterruptStepper<64>::init(speed, speed * 2);
-	// InterruptStepper::move(static_cast<uint64_t>(SPR) * 10, speed);
-	InterruptStepper<64>::moveAccelerated(static_cast<uint64_t>(SPR) * 1, slewing_speed);
+	axis::ra::init(slewing_speed, slewing_speed * 2);
+	// axis::ra::move()
+	axis::ra::move(SPR * 10LL, DEG_TO_RAD * slewing_speed);
+
+	// InterruptStepper<64>::moveAccelerated(static_cast<uint64_t>(SPR) * 1, slewing_speed);
 }
 
 void loop()
 {
 	while (1)
 	{
+		// nothing to do here, we want to test the interrupts
 	}
 }
 

@@ -2,8 +2,8 @@
 #define __InterruptStepper_H__
 
 #include <math.h>
-#include <FastPin.h>
 #include <TimerInterrupt.h>
+#include <Driver.h>
 
 #define ALPHA (2 * M_PI / SPR)
 #define ALPHA_2 (2 * ALPHA)
@@ -11,18 +11,34 @@
 #define TIMER_INTERVAL (1.0 / TIMER_FREQ)
 #define ALPHA_T (ALPHA * F_CPU)
 
+#define DEBUG_STEPPER_TIMING_PIN 48
+#if DEBUG_STEPPER_TIMING_PIN != 0
+#include <FastPin.h>
+#define STEPPER_TIMING_START() FastPin<DEBUG_STEPPER_TIMING_PIN>::high()
+#define STEPPER_TIMING_END() FastPin<DEBUG_STEPPER_TIMING_PIN>::low()
+#else
+#define STEPPER_TIMING_START()
+#define STEPPER_TIMING_END()
+#endif
+
+#ifndef DEG_TO_RAD
+#define DEG_TO_RAD 0.017453292519943295769236907684886
+#endif
+
 enum RampState
 {
     STOP,
     ACCEL,
     RUN,
-    DECEL
+    DECEL,
 };
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
 class InterruptStepper
 {
 private:
+    typedef TimerInterrupt<TIMER> INTERRUPT;
+
     InterruptStepper() = delete;
 
     static RampState state;
@@ -38,8 +54,8 @@ public:
     /**
      * @brief Initialize the stepper code with acceleration ramp timings based on AVR466
      * 
-     * @param maxSpeed maximal ramp speed (rad/s)
-     * @param acceleration ramp acceleration and deceleration (rad/s/s)
+     * @param maxSpeed maximal ramp speed (deg/s)
+     * @param acceleration ramp acceleration and deceleration (deg/s/s)
      */
     static void init(float maxSpeed, float acceleration)
     {
@@ -89,12 +105,14 @@ public:
             // reset calculated ramp level time so we can accumulate again in next iteration
             ramp_level_time = 0;
         }
+
+        INTERRUPT::init();
     }
 
-    static void move(int64_t steps, float speed)
+    static void move(float speed, uint32_t steps = UINT32_MAX)
     {
-        // TODO: handle direction
-        cur_step = 0;
+        cur_step = steps;
+        DRIVER::dir(speed >= 0.f);
         state = RUN;
         INTERRUPT::setCallback(move_handler);
         INTERRUPT::setInterval(static_cast<uint32_t>(ALPHA_T / speed + 0.5));
@@ -103,6 +121,7 @@ public:
     static void moveAccelerated(int32_t steps, float speed)
     {
         state = ACCEL;
+        DRIVER::dir(speed >= 0.f);
         cur_ramp_level = 0;
         cur_ramp_level_step = 0;
 
@@ -123,12 +142,17 @@ public:
 
     static inline __attribute__((always_inline)) void move_handler()
     {
-        FastPin<54>::pulse();
+        DRIVER::step();
+        if (--cur_step == 0)
+        {
+            INTERRUPT::stop();
+        }
     }
 
     static inline __attribute__((always_inline)) void move_accelerated_handler()
     {
-        FastPin<54>::pulse();
+        STEPPER_TIMING_START();
+        DRIVER::step();
         cur_step++;
 
         // this could be optimized even further by setting interrupt callback to appropriate functions depending on the state
@@ -166,8 +190,10 @@ public:
             }
             break;
         case RUN:
-            if (cur_step >= decel_start) // start deceleration
+            // start deceleration if we current step matches deceleration start step
+            if (cur_step >= decel_start)
             {
+                // set interrupt interval to the last ramp level of the acceleration
                 INTERRUPT::setInterval(ramp_level_delays[cur_ramp_level]);
                 state = DECEL;
             }
@@ -182,44 +208,43 @@ public:
                 }
                 else // we reached end of the ramp, stop
                 {
-                    INTERRUPT::setInterval(min_c);
                     state = STOP;
                 }
             }
             break;
         case STOP:
-            INTERRUPT::setCallback(nullptr);
             INTERRUPT::stop();
             cur_ramp_level = 0;
             cur_ramp_level_step = 0;
             break;
         }
-    }
 
+        STEPPER_TIMING_END();
+    }
 }; //InterruptStepper
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-RampState InterruptStepper<INTERRUPT, RAMP_LEVELS>::state = STOP;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+RampState InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::state = STOP;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint32_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::min_c = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint32_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::min_c = 0;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint32_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::ramp_level_delays[RAMP_LEVELS];
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint32_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::ramp_level_delays[RAMP_LEVELS];
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint32_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::cur_step = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint32_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::cur_step = 0;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint32_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::steps_per_level = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint32_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::steps_per_level = 0;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint8_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::cur_ramp_level = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint8_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::cur_ramp_level = 0;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint8_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::cur_ramp_level_step = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint8_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::cur_ramp_level_step = 0;
 
-template <class INTERRUPT, uint8_t RAMP_LEVELS>
-uint32_t InterruptStepper<INTERRUPT, RAMP_LEVELS>::decel_start = 0;
+template <Timer TIMER, uint8_t RAMP_LEVELS, typename DRIVER>
+uint32_t InterruptStepper<TIMER, RAMP_LEVELS, DRIVER>::decel_start = 0;
 
 #endif //__InterruptStepper_H__

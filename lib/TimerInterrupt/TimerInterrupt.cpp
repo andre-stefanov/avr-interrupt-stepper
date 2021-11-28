@@ -1,5 +1,7 @@
 #include "TimerInterrupt.h"
 
+#if __has_include(<avr/io.h>)
+
 volatile uint8_t * const TCCRA(Timer timer)
 {
     switch (timer)
@@ -102,12 +104,4 @@ volatile uint16_t * const TCNT(Timer timer)
     }
 }
 
-ISR(TIMER1_OVF_vect)
-{
-    TimerInterrupt<TIMER_1>::handle_overflow();
-}
-
-ISR(TIMER1_COMPA_vect)
-{
-    TimerInterrupt<TIMER_1>::handle_compare_match();
-}
+#endif

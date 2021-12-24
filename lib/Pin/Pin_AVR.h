@@ -7,7 +7,7 @@
 #define PL(PIN) if ((PIN) == 53) { PORTB &= B11111110; }
 
 template <uint8_t PIN>
-class FastPin
+class Pin
 {
 private:                                                     
     static volatile uint8_t *_out_reg;
@@ -15,7 +15,7 @@ private:
     static uint8_t _neg;
 
 public:
-    FastPin() = delete;
+    Pin() = delete;
 
     static void init()
     {
@@ -49,8 +49,8 @@ public:
     }
 };
 
-template<uint8_t PIN> volatile uint8_t * FastPin<PIN>::_out_reg;
-template<uint8_t PIN> uint8_t FastPin<PIN>::_bit;
-template<uint8_t PIN> uint8_t FastPin<PIN>::_neg;
+template<uint8_t PIN> volatile uint8_t * Pin<PIN>::_out_reg;
+template<uint8_t PIN> uint8_t Pin<PIN>::_bit;
+template<uint8_t PIN> uint8_t Pin<PIN>::_neg;
 
 #endif

@@ -6,16 +6,16 @@
 #include <avr/interrupt.h>
 
 #define DEBUG_INTERRUPT_TIMING_PIN 49
-#if DEBUG_INTERRUPT_TIMING_PIN != 0
-#include <FastPin.h>
-#define INTERRUPT_TIMING_START() FastPin<DEBUG_INTERRUPT_TIMING_PIN>::high()
-#define INTERRUPT_TIMING_END() FastPin<DEBUG_INTERRUPT_TIMING_PIN>::low()
+#if DEBUG_INTERRUPT_TIMING_PIN != 0 && UNIT_TEST != 1
+#include <Pin.h>
+#define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
+#define INTERRUPT_TIMING_END() Pin<DEBUG_INTERRUPT_TIMING_PIN>::low()
 #else
 #define INTERRUPT_TIMING_START()
 #define INTERRUPT_TIMING_END()
 #endif
 
-#define ALWAYS_INLINE inline __attribute__((always_inline))
+#define INLINE inline __attribute__((always_inline))
 
 typedef void (*timer_callback)(void);
 
@@ -50,9 +50,12 @@ private:
     static volatile uint16_t ovf_cnt;
     static volatile uint16_t ovf_left;
 
+private:
     TimerInterrupt() {}
 
 public:
+    constexpr static auto FREQ = F_CPU;
+
     static void init()
     {
         cli();               // disable interrupts
@@ -63,7 +66,7 @@ public:
         sei();               // reenable interrupts
     }
 
-    static ALWAYS_INLINE void setInterval(uint32_t value)
+    static INLINE void setInterval(uint32_t value)
     {
         // lower 16 bit of value will be used for compare match. thus we are only interested
         // in higher 16 bit for amount of overflows
@@ -90,30 +93,18 @@ public:
         *_tccrb |= 1;
     }
 
-    static ALWAYS_INLINE void stop()
+    static INLINE void stop()
     {
         // set prescaler to 0 (stop interrupts)
         *_tccrb = 0;
     }
 
-    static ALWAYS_INLINE void setFrequency(float frequency)
-    {
-        if (frequency > 0)
-        {
-            setInterval(F_CPU / frequency);
-        }
-        else
-        {
-            stop();
-        }
-    }
-
-    static ALWAYS_INLINE void setCallback(timer_callback fn)
+    static INLINE void setCallback(timer_callback fn)
     {
         _callback = fn;
     }
 
-    static ALWAYS_INLINE void handle_overflow()
+    static INLINE void handle_overflow()
     {
         INTERRUPT_TIMING_START();
         // decrement amount of left overflows
@@ -123,10 +114,10 @@ public:
         if (ovf_left == 0)
         {
             // Timer/Counter1 Output Compare A Match Interrupt Enable
-            *_timsk |= (1 << 1); 
+            *_timsk |= (1 << 1);
 
             // enable CTC mode (clear timer on compare)
-            *_tccrb |= (1 << 3); 
+            *_tccrb |= (1 << 3);
 
             // clear Output Compare Flag 1A because it was set during overflow mode.
             // Not doing so will lead to interrupt executing instantly after this
@@ -135,10 +126,10 @@ public:
         INTERRUPT_TIMING_END();
     }
 
-    static ALWAYS_INLINE void handle_compare_match()
+    static INLINE void handle_compare_match()
     {
         INTERRUPT_TIMING_START();
-        
+
         // check if we need to switch to overflows again (slow frequency)
         if (ovf_cnt)
         {

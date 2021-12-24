@@ -3,10 +3,10 @@
 #include <Arduino.h>
 
 template <uint8_t PIN>
-class FastPin
+class Pin
 {
 public:
-    FastPin() = delete;
+    Pin() = delete;
 
     static void init()
     {

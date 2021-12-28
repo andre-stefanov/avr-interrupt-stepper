@@ -91,12 +91,16 @@ public:
 
         // set prescaler to 1 (count at MCU frequency)
         *_tccrb |= 1;
+
+        Pin<48>::pulse();
     }
 
     static INLINE void stop()
     {
         // set prescaler to 0 (stop interrupts)
         *_tccrb = 0;
+
+        Pin<48>::pulse();
     }
 
     static INLINE void setCallback(timer_callback fn)

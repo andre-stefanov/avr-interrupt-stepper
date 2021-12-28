@@ -5,11 +5,11 @@
 
 #define SLEWING_DEG_PER_SEC (4 * TRANSMISSION)
 
+#include "TimerInterrupt.h"
+#include "AccelerationRamp.h"
 #include "Pin.h"
 #include "Driver.h"
 #include "Stepper.h"
-#include "TimerInterrupt.h"
-#include "AccelerationRamp.h"
 
 #include <Arduino.h>
 
@@ -20,7 +20,6 @@
 
 #define DEBUG_LOOP_TIMING_PIN 50
 #define DEBUG_SETUP_TIMING_PIN 51
-
 namespace axis
 {
   namespace ra
@@ -32,7 +31,7 @@ namespace axis
         interrupt,
         driver,
         (uint32_t)SLEWING_DEG_PER_SEC,
-        (uint32_t)(2 * SLEWING_DEG_PER_SEC)>;
+        (uint32_t)(4 * SLEWING_DEG_PER_SEC)>;
   }
 }
 
@@ -40,30 +39,6 @@ void setup()
 {
   Serial.begin(115200);
   // delay(1000);
-
-  // constexpr auto freq = F_CPU;
-  // constexpr auto transmission = 35.46611505122143;
-  // constexpr auto spr = 400LL * 256LL;
-  // constexpr auto max_speed = (uint32_t)(2 * transmission);
-  // constexpr auto acceleration = (uint32_t)(4 * transmission);
-
-  // typedef AccelerationRamp<64, freq, spr, max_speed, acceleration> RARamp;
-  // constexpr auto ramp = RARamp();
-  // Serial.println();
-  // for (int i = 0; i < 64; i++)
-  // {
-  //   if (i % 8 == 0)
-  //   {
-  //     if (i > 0)
-  //       Serial.println();
-  //   }
-  //   else
-  //   {
-  //     Serial.print(", ");
-  //   }
-  //   Serial.print(axis::ra::stepper::ramp.counters[i]);
-  // }
-  // Serial.println();
 
   Pin<46>::init();
   Pin<47>::init();
@@ -78,20 +53,32 @@ void setup()
 
   axis::ra::interrupt::init();
 
-  axis::ra::stepper::move(DEG_TO_RAD * SLEWING_DEG_PER_SEC, 10000);
-  // axis::ra::stepper::move(DEG_TO_RAD * TRACKING_DEG_PER_SEC);
+  // axis::ra::stepper::move(TRACKING_DEG_PER_SEC, 10);
+
+  axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
+  delay(600);
+  axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 1000);
+  delay(400);
+  axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 1000);
+  delay(500);
+  axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 100);
+  delay(200);
+  axis::ra::stepper::move(TRACKING_DEG_PER_SEC, 10);
+
+  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
+  // delay(200);
+  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 3000);
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();
 }
 
 void loop()
 {
-  while (1)
+  do
   {
     Pin<DEBUG_LOOP_TIMING_PIN>::pulse();
-  }
+  } while (1);
 }
 
 ISR(TIMER1_OVF_vect) { TimerInterrupt<TIMER_1>::handle_overflow(); }
-
 ISR(TIMER1_COMPA_vect) { TimerInterrupt<TIMER_1>::handle_compare_match(); }

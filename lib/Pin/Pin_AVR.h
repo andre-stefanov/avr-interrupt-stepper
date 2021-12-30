@@ -2,14 +2,10 @@
 
 #include <Arduino.h>
 
-#define PT(PIN) if ((PIN) == 53) { PINB = B00000001; }
-#define PH(PIN) if ((PIN) == 53) { PORTB |= B00000001; }
-#define PL(PIN) if ((PIN) == 53) { PORTB &= B11111110; }
-
 template <uint8_t PIN>
 class Pin
 {
-private:                                                     
+private:
     static volatile uint8_t *_out_reg;
     static uint8_t _bit;
     static uint8_t _neg;
@@ -49,8 +45,11 @@ public:
     }
 };
 
-template<uint8_t PIN> volatile uint8_t * Pin<PIN>::_out_reg;
-template<uint8_t PIN> uint8_t Pin<PIN>::_bit;
-template<uint8_t PIN> uint8_t Pin<PIN>::_neg;
+template <uint8_t PIN>
+volatile uint8_t *Pin<PIN>::_out_reg;
+template <uint8_t PIN>
+uint8_t Pin<PIN>::_bit;
+template <uint8_t PIN>
+uint8_t Pin<PIN>::_neg;
 
 #endif

@@ -99,6 +99,7 @@ public:
     {
         // set prescaler to 0 (stop interrupts)
         *_tccrb = 0;
+        *_tcnt = 0;
 
         Pin<48>::pulse();
     }

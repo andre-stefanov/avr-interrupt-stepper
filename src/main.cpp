@@ -53,30 +53,44 @@ void setup()
 
   axis::ra::interrupt::init();
 
-  // axis::ra::stepper::move(TRACKING_DEG_PER_SEC, 10);
-
-  axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
-  delay(600);
-  axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 1000);
-  delay(400);
-  axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 1000);
-  delay(500);
-  axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 100);
-  delay(200);
-  axis::ra::stepper::move(TRACKING_DEG_PER_SEC, 10);
-
-  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
-  // delay(200);
   // axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 3000);
+  // delay(200);
+  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
+  // delay(500);
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();
+}
+
+axis::ra::stepper::MovementSpec specs[] = {
+  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC, 3000),
+  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC, 1000),
+  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC / 4, 1000),
+  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC / 4, 100),
+  axis::ra::stepper::MovementSpec(DEG_TO_RAD * TRACKING_DEG_PER_SEC, 10),
+};
+
+unsigned int started = 0;
+volatile unsigned int completed = 0;
+volatile unsigned long next_start = 0;
+
+void onComplete()
+{
+  completed++;
+  next_start = millis() + 100;
 }
 
 void loop()
 {
   do
   {
-    Pin<DEBUG_LOOP_TIMING_PIN>::pulse();
+    Pin<DEBUG_LOOP_TIMING_PIN>::high();
+    
+    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start) {
+      axis::ra::stepper::move(specs[started], onComplete);
+      started++;
+    }
+    
+    Pin<DEBUG_LOOP_TIMING_PIN>::low();
   } while (1);
 }
 

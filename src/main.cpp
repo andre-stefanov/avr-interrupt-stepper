@@ -1,47 +1,69 @@
-#define SIDEREAL 86164.0905f
-#define TRANSMISSION 35.46611505122143
-
-#define TRACKING_DEG_PER_SEC (360 / SIDEREAL * TRANSMISSION)
-
-#define SLEWING_DEG_PER_SEC (4 * TRANSMISSION)
-
-#include "TimerInterrupt.h"
-#include "AccelerationRamp.h"
 #include "Pin.h"
 #include "Driver.h"
+#include "TimerInterrupt.h"
 #include "Stepper.h"
 
-#include <Arduino.h>
+#include "utils.h"
 
-#define RA_RAMP_LEVELS 64
-
-#define PIN_RA_STEP 46
-#define PIN_RA_DIR 47
-
-#define DEBUG_LOOP_TIMING_PIN 50
-#define DEBUG_SETUP_TIMING_PIN 51
+constexpr auto SIDEREAL = 86164.0905f;
 namespace axis
 {
   namespace ra
   {
-    auto transmission = 35.46611505122143;
-    using interrupt = TimerInterrupt<TIMER_1>;
-    using driver = Driver<Pin<PIN_RA_STEP>, Pin<PIN_RA_DIR>>;
+    constexpr auto TRANSMISSION = 35.46611505122143f;
+    constexpr auto SPR = 400U * 64U;
+
+    constexpr auto TRACKING = Speed(360.0f / SIDEREAL * TRANSMISSION);
+    constexpr auto SLEWING = Speed(4.0f * TRANSMISSION);
+
+    using pinStep = Pin<46>;
+    using pinDir = Pin<47>;
+    using interrupt = TimerInterrupt<Timer::TIMER_3>;
+    using driver = Driver<SPR, pinStep, pinDir>;
     using stepper = Stepper<
         interrupt,
         driver,
-        (uint32_t)SLEWING_DEG_PER_SEC,
-        (uint32_t)(4 * SLEWING_DEG_PER_SEC)>;
+        SLEWING.mrad_u32(),
+        4 * SLEWING.mrad_u32()>;
   }
 }
 
+using namespace axis::ra;
+
+stepper::MovementSpec specs[] = {
+    stepper::MovementSpec(SLEWING.rad(), 3000),
+    stepper::MovementSpec(SLEWING.rad(), 1000),
+    stepper::MovementSpec(SLEWING.rad() / 4, 1000),
+    stepper::MovementSpec(SLEWING.rad() / 4, 100),
+    stepper::MovementSpec(TRACKING.rad(), 5),
+    // stepper::MovementSpec(TRACKING.rad() * 0.5, 5),
+    // stepper::MovementSpec(TRACKING.rad(), 5),
+    // stepper::MovementSpec(TRACKING.rad() * 1.5, 5),
+    // stepper::MovementSpec(TRACKING.rad(), 5),
+};
+
+unsigned int started = 0;
+volatile unsigned int completed = 0;
+volatile unsigned long next_start = 0;
+
+unsigned long int millis();
+
+void onComplete()
+{
+  completed++;
+  next_start = millis();
+}
+
+#ifdef ARDUINO
+#include <Arduino.h>
+
+#define DEBUG_LOOP_TIMING_PIN 50
+#define DEBUG_SETUP_TIMING_PIN 51
+
 void setup()
 {
-  Serial.begin(115200);
-  // delay(1000);
-
-  Pin<46>::init();
-  Pin<47>::init();
+  pinStep::init();
+  pinDir::init();
   Pin<48>::init();
   Pin<49>::init();
   Pin<50>::init();
@@ -51,48 +73,52 @@ void setup()
 
   Pin<DEBUG_SETUP_TIMING_PIN>::high();
 
-  axis::ra::interrupt::init();
-
-  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC / 4, 3000);
-  // delay(200);
-  // axis::ra::stepper::move(SLEWING_DEG_PER_SEC, 3000);
-  // delay(500);
+  interrupt::init();
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();
 }
 
-axis::ra::stepper::MovementSpec specs[] = {
-  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC, 3000),
-  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC, 1000),
-  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC / 4, 1000),
-  axis::ra::stepper::MovementSpec(DEG_TO_RAD * SLEWING_DEG_PER_SEC / 4, 100),
-  axis::ra::stepper::MovementSpec(DEG_TO_RAD * TRACKING_DEG_PER_SEC, 10),
-};
-
-unsigned int started = 0;
-volatile unsigned int completed = 0;
-volatile unsigned long next_start = 0;
-
-void onComplete()
-{
-  completed++;
-  next_start = millis() + 100;
-}
-
 void loop()
 {
+  // stepper::move(stepper::MovementSpec(DEG_TO_RAD * SLEWING_mRAD_PER_SEC / 4, 1000));
+  // delay(420);
+  // Pin<46>::init();
+  // stepper::move(stepper::MovementSpec(DEG_TO_RAD * SLEWING_mRAD_PER_SEC, 3000));
+  // do
+  // {
+  //   // nothing
+  // } while (true);
+
   do
   {
     Pin<DEBUG_LOOP_TIMING_PIN>::high();
-    
-    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start) {
-      axis::ra::stepper::move(specs[started], onComplete);
+
+    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start)
+    {
+      // Serial.print("Starting movement ");
+      // Serial.println(started);
+      // stepper::move(specs[started], onComplete);
+      stepper::move(specs[started], StepperCallback::create<onComplete>());
       started++;
     }
-    
+
     Pin<DEBUG_LOOP_TIMING_PIN>::low();
   } while (1);
 }
 
-ISR(TIMER1_OVF_vect) { TimerInterrupt<TIMER_1>::handle_overflow(); }
-ISR(TIMER1_COMPA_vect) { TimerInterrupt<TIMER_1>::handle_compare_match(); }
+#else
+
+#include <chrono>
+
+using namespace std::chrono;
+unsigned long int millis()
+{
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+int main(int argc, char const *argv[])
+{
+  return 0;
+}
+
+#endif

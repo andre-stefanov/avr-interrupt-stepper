@@ -1,111 +1,53 @@
-// #include <unity.h>
+#include <unity.h>
 
-// #define MICROSTEPPING 64LL
-// #define SPR (400LL * MICROSTEPPING)
-// #define SIDEREAL 86164.0905f
-// #define TRANSMISSION 35.46611505122143
+#define F_CPU 16000000
 
-// #define TRACKING_DEG_PER_SEC (TRANSMISSION * SPR / SIDEREAL)
+#include "Constants.h"
+#include "mocks/PinMock.h"
+#include "mocks/DriverMock.h"
+#include "mocks/TimerInterruptMock.h"
+#include "AccelerationRamp.h"
+#include "Stepper.h"
 
-// #include "Stepper.h"
+using namespace axis::ra;
 
-// template <uint8_t PIN>
-// struct TestPin
-// {
-//     static uint32_t toggle_count;
-//     static bool state;
+namespace mocks
+{
+    using pin_step = PinMock<1>;
+    using pin_dir = PinMock<2>;
 
-//     static void pulse()
-//     {
-//         high();
-//         low();
-//         toggle_count++;
-//     }
+    using driver = DriverMock<SPR, pin_step::REAL_TYPE, pin_dir::REAL_TYPE>;
 
-//     static void high() { state = true; }
+    using timer_interrupt = TimerInterruptMock<Timer::TIMER_TEST>;
+}
 
-//     static void low() { state = false; }
+using stepper = Stepper<mocks::timer_interrupt::REAL_TYPE, mocks::driver::REAL_TYPE, SLEWING_SPEED.mrad_u32(), SLEWING_SPEED.mrad_u32() * 4>;
 
-//     static void reset()
-//     {
-//         toggle_count = 0;
-//         state = false;
-//     }
-// };
+void move_and_assert(float speed, uint32_t steps)
+{
+    int32_t start_position = mocks::driver::position;
 
-// template <uint8_t PIN>
-// uint32_t TestPin<PIN>::toggle_count = 0;
+    stepper::move(speed, steps);
 
-// template <uint8_t PIN>
-// bool TestPin<PIN>::state = false;
+    mocks::timer_interrupt::run_until_stopped();
 
-// typedef void (*timer_callback)(void);
+    TEST_ASSERT_EQUAL_INT64(steps + start_position, mocks::driver::position);
+}
 
-// struct TestTimerInterrupt
-// {
-//     static bool initialized;
-//     static bool stopped;
-//     static uint32_t interval;
-//     static timer_callback callback;
+void test_move_full_ramp()
+{
+    move_and_assert(SLEWING_SPEED.rad(), 10000);
+}
 
-//     static void init()
-//     {
-//         initialized = true;
-//     }
+void test_move_full_ramp_half_speed()
+{
+    move_and_assert(SLEWING_SPEED.rad() / 2, 10000);
+}
 
-//     static void stop()
-//     {
-//         stopped = true;
-//     }
-
-//     static void setInterval(uint32_t value)
-//     {
-//         UnityPrintNumber(value);
-//         interval = value;
-//         stopped = false;
-//     }
-
-//     static void setCallback(timer_callback fn)
-//     {
-//         callback = fn;
-//     }
-// };
-
-// bool TestTimerInterrupt::initialized = false;
-// bool TestTimerInterrupt::stopped = true;
-// uint32_t TestTimerInterrupt::interval = 0;
-// timer_callback TestTimerInterrupt::callback = nullptr;
-
-// typedef InterruptStepper<TestTimerInterrupt, 64, Driver<TestPin<0>, TestPin<1>>> TestStepper;
-
-// void test_init_timer()
-// {
-//     TEST_ASSERT_FALSE(TestTimerInterrupt::initialized);
-//     TestStepper::init(1000.0f, 1000.0f);
-//     TEST_ASSERT_TRUE_MESSAGE(TestTimerInterrupt::initialized, "Interrupt was not initialized as expected");
-// }
-
-// void test_move_10000_sps()
-// {
-//     TestStepper::init(DEG_TO_RAD * 2, DEG_TO_RAD * 2);
-//     TestStepper::move(DEG_TO_RAD * 2, 10);
-
-//     TEST_ASSERT_EQUAL_UINT32(10, TestTimerInterrupt::interval);
-
-//     while (!TestTimerInterrupt::stopped)
-//     {
-//         TestTimerInterrupt::callback();
-//     }
-
-//     TEST_ASSERT_EQUAL_UINT32(10, TestPin<0>::toggle_count);
-// }
-
-// int main(int argc, char **argv)
-// {
-//     UNITY_BEGIN();
-//     RUN_TEST(test_init_timer);
-//     RUN_TEST(test_move_10000_sps);
-//     UNITY_END();
-
-//     return 0;
-// }
+void test_Stepper()
+{
+    UNITY_BEGIN();
+    RUN_TEST(test_move_full_ramp);
+    RUN_TEST(test_move_full_ramp_half_speed);
+    UNITY_END();
+}

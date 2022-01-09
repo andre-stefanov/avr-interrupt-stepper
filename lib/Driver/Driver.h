@@ -1,31 +1,40 @@
 #pragma once
 
-#include "stdint-gcc.h"
+#include <stdint.h>
 
-template <typename PIN_STEP, typename PIN_DIR>
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
 class Driver
 {
 private:
     Driver() = delete;
 
 public:
+    constexpr static auto SPR = T_SPR;
 
-    constexpr static auto SPR = 400 * 64;
+    static void step();
 
-    static inline __attribute__((always_inline)) void step()
-    {
-        PIN_STEP::pulse();
-    }
-
-    static inline __attribute__((always_inline)) void dir(bool value)
-    {
-        if (value)
-        {
-            PIN_DIR::high();
-        }
-        else
-        {
-            PIN_DIR::low();
-        }
-    }
+    static void dir(bool cw);
 };
+
+#ifndef DRIVER_CUSTOM_IMPL
+
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
+inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR>::step()
+{
+    T_PIN_STEP::pulse();
+}
+
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
+inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR>::dir(bool cw)
+{
+    if (cw)
+    {
+        T_PIN_DIR::high();
+    }
+    else
+    {
+        T_PIN_DIR::low();
+    }
+}
+
+#endif

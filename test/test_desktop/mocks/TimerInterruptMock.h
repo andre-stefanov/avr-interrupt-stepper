@@ -3,6 +3,8 @@
 #define CUSTOM_TIMER_INTERRUPT_IMPL
 #include "TimerInterrupt.h"
 
+#include "math.h"
+
 enum class Timer : int
 {
     TIMER_TEST = 1
@@ -17,12 +19,25 @@ struct TimerInterruptMock
     static bool running;
     static timer_callback callback;
 
-    static void run_until_stopped()
+    static uint32_t max_interval;
+    static uint32_t min_interval;
+
+    static void run_until_stopped(uint32_t limit_steps = UINT32_MAX)
     {
-        while (running)
+        uint32_t steps_left = limit_steps;
+        while (running && steps_left--)
         {
             callback();
         }
+    }
+
+    static void reset()
+    {
+        initialized = false;
+        running = false;
+        callback = nullptr;
+        max_interval = 0;
+        min_interval = UINT32_MAX;
     }
 };
 
@@ -37,6 +52,12 @@ timer_callback TimerInterruptMock<T>::callback = nullptr;
 
 template <Timer T>
 const unsigned long int TimerInterrupt<T>::FREQ = F_CPU;
+
+template <Timer T>
+uint32_t TimerInterruptMock<T>::max_interval = 0;
+
+template <Timer T>
+uint32_t TimerInterruptMock<T>::min_interval = UINT32_MAX;
 
 template <Timer T>
 void TimerInterrupt<T>::init()
@@ -54,6 +75,15 @@ template <Timer T>
 void TimerInterrupt<T>::setInterval(uint32_t value)
 {
     TimerInterruptMock<T>::running = true;
+
+    if (value > TimerInterruptMock<T>::max_interval)
+    {
+        TimerInterruptMock<T>::max_interval = value;
+    }
+    else if (value < TimerInterruptMock<T>::min_interval)
+    {
+        TimerInterruptMock<T>::min_interval = value;
+    }
 }
 
 template <Timer T>

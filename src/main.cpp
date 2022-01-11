@@ -10,11 +10,11 @@ namespace axis
 {
   namespace ra
   {
-    constexpr auto TRANSMISSION = 35.46611505122143f;
-    constexpr auto SPR = 400U * 64U;
-
-    constexpr auto TRACKING = Speed(360.0f / SIDEREAL * TRANSMISSION);
-    constexpr auto SLEWING = Speed(4.0f * TRANSMISSION);
+    constexpr float TRANSMISSION = 35.46611505122143f;
+    
+    constexpr uint32_t SPR = 400U * 128U;
+    constexpr Angle TRACKING = Angle::from_deg(360.0f / SIDEREAL) * TRANSMISSION;
+    constexpr Angle SLEWING = Angle::from_deg(4.0f) * TRANSMISSION;
 
     using pinStep = Pin<46>;
     using pinDir = Pin<47>;
@@ -31,11 +31,11 @@ namespace axis
 using namespace axis::ra;
 
 stepper::MovementSpec specs[] = {
-    stepper::MovementSpec(SLEWING.rad(), 3000),
-    stepper::MovementSpec(SLEWING.rad(), 1000),
-    stepper::MovementSpec(SLEWING.rad() / 4, 1000),
-    stepper::MovementSpec(SLEWING.rad() / 4, 100),
-    stepper::MovementSpec(TRACKING.rad(), 5),
+    stepper::MovementSpec(SLEWING.rad(), 10000),
+    // stepper::MovementSpec(SLEWING.rad(), 1000),
+    // stepper::MovementSpec(SLEWING.rad() / 4, 1000),
+    // stepper::MovementSpec(SLEWING.rad() / 4, 100),
+    // stepper::MovementSpec(TRACKING.rad(), 5),
     // stepper::MovementSpec(TRACKING.rad() * 0.5, 5),
     // stepper::MovementSpec(TRACKING.rad(), 5),
     // stepper::MovementSpec(TRACKING.rad() * 1.5, 5),
@@ -51,7 +51,7 @@ unsigned long int millis();
 void onComplete()
 {
   completed++;
-  next_start = millis();
+  next_start = millis() + 100;
 }
 
 #ifdef ARDUINO
@@ -71,8 +71,19 @@ void setup()
   Pin<52>::init();
   Pin<53>::init();
 
+  Serial.begin(115200);
+
+  // for (size_t i = 0; i < stepper::Ramp::STAIRS_COUNT; i++)
+  // {
+  //   Serial.println(stepper::Ramp::intervals[i]);
+  // }
+
   Pin<DEBUG_SETUP_TIMING_PIN>::high();
 
+  // auto x = NewtonRaphson::sqrt(2.0f * stepper::Ramp::STEP_ANGLE / stepper::Ramp::UTIL_ACCELERATION_RAD);
+  // auto y = constexpr_sqrt(2.0f * stepper::Ramp::STEP_ANGLE / stepper::Ramp::UTIL_ACCELERATION_RAD);
+  // Serial.println(x, 10);
+  // Serial.println(y, 10);
   interrupt::init();
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();
@@ -109,6 +120,7 @@ void loop()
 #else
 
 #include <chrono>
+#include <iostream>
 
 using namespace std::chrono;
 unsigned long int millis()
@@ -118,6 +130,15 @@ unsigned long int millis()
 
 int main(int argc, char const *argv[])
 {
+  while (1)
+  {
+    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start)
+    {
+      stepper::move(specs[started], StepperCallback::create<onComplete>());
+      started++;
+    }
+  }
+
   return 0;
 }
 

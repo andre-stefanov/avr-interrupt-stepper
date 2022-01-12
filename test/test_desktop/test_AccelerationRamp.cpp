@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include "utils.h"
 #include "Constants.h"
 #include <AccelerationRamp.h>
@@ -19,23 +23,6 @@ public:
 
     constexpr static Angle MAX_SPEED = Angle::from_mrad_u32(T_MAX_SPEED_mRAD);
     constexpr static Angle ACCELERATION = Angle::from_mrad_u32(T_ACCELERATION_mRAD);
-
-    static void dump()
-    {
-        UnityPrint("Test AccelerationRamp<");
-        UnityPrint("T_STAIRS=");
-        UnityPrintNumber(T_STAIRS);
-        UnityPrint(", T_FREQ=");
-        UnityPrintNumber(T_FREQ);
-        UnityPrint(", T_SPR=");
-        UnityPrintNumber(T_SPR);
-        UnityPrint(", T_MAX_SPEED_mRAD=");
-        UnityPrintNumber(T_MAX_SPEED_mRAD);
-        UnityPrint(", T_ACCELERATION_mRAD=");
-        UnityPrintNumber(T_ACCELERATION_mRAD);
-        UnityPrint(">");
-        UNITY_PRINT_EOL();
-    }
 
     static void test_stairs_count()
     {
@@ -94,9 +81,6 @@ public:
 
     static void run()
     {
-        UNITY_PRINT_EOL();
-        dump();
-
         RUN_TEST(test_stairs_count);
         RUN_TEST(test_steps_per_stair);
         RUN_TEST(test_acceleration_intervals_decrementing);
@@ -112,18 +96,17 @@ void test_AccelerationRamp()
 {
     using namespace axis::ra;
 
-    constexpr auto SPEED_1 = Angle::from_deg(TRANSMISSION);
-    constexpr auto SPEED_2 = 2 * SPEED_1;
-    constexpr auto SPEED_4 = 4 * SPEED_1;
+    constexpr auto DEG_1 = Angle::from_deg(TRANSMISSION);
+    constexpr auto DEG_4 = 4 * DEG_1;
 
     UNITY_BEGIN();
-    
-    TestCase<128U, F_CPU, 400U * 64U, SPEED_4.mrad_u32(), 2 * SPEED_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 64U, SPEED_4.mrad_u32(), 4 * SPEED_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 256U, SPEED_4.mrad_u32(), 2 * SPEED_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 256U, SPEED_4.mrad_u32(), 2 * SPEED_4.mrad_u32()>::run();
 
-    // using TestRamp = TestCase<128U, F_CPU, 400U * 256U, SPEED_4.mrad_u32(), 2 * SPEED_4.mrad_u32()>::TestRamp;
+    TestCase<128U, F_CPU, 400U * 64U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 64U, DEG_4.mrad_u32(), 4 * DEG_4.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
+
+    // using TestRamp = TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::TestRamp;
 
     UNITY_END();
 }

@@ -4,14 +4,15 @@
 
 #include <TimerInterrupt.h>
 #include <stdint.h>
-#include <avr/io.h>
 #include <avr/interrupt.h>
 
 #define DEBUG_INTERRUPT_TIMING_PIN 49
 #if DEBUG_INTERRUPT_TIMING_PIN != 0 && UNIT_TEST != 1
 #include <Pin.h>
-#define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
-#define INTERRUPT_TIMING_END() Pin<DEBUG_INTERRUPT_TIMING_PIN>::low()
+// #define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
+// #define INTERRUPT_TIMING_END() Pin<DEBUG_INTERRUPT_TIMING_PIN>::low()
+#define INTERRUPT_TIMING_START() PORTL |= 1;
+#define INTERRUPT_TIMING_END() PORTL &= ~1;
 #else
 #define INTERRUPT_TIMING_START()
 #define INTERRUPT_TIMING_END()

@@ -11,9 +11,9 @@ private:
 public:
     constexpr static auto SPR = T_SPR;
 
-    static void step();
+    static inline __attribute__((always_inline)) void step();
 
-    static void dir(bool cw);
+    static inline __attribute__((always_inline)) void dir(bool cw);
 };
 
 #ifndef DRIVER_CUSTOM_IMPL

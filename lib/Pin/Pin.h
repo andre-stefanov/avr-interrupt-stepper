@@ -8,11 +8,11 @@ class Pin
 public:
     static void init();
 
-    static void pulse();
+    static inline __attribute__((always_inline)) void pulse();
 
-    static void high();
+    static inline __attribute__((always_inline)) void high();
 
-    static void low();
+    static inline __attribute__((always_inline)) void low();
 
 private:
     Pin() = delete;

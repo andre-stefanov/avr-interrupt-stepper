@@ -1,6 +1,6 @@
 #pragma once
 
-#define PROFILE_STEPPER 1
+#define PROFILE_STEPPER 0
 #if PROFILE_STEPPER && defined(ARDUINO)
 #include "Pin.h"
 #define PROFILE_MOVE_BEGIN() Pin<52>::high()
@@ -120,7 +120,7 @@ public:
     static void run_handler()
     {
         DRIVER::step();
-
+        
         if (--run_steps_left == 0)
         {
             if (ramp_stair == 0)

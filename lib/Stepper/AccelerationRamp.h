@@ -33,7 +33,6 @@ struct Intervals
 template <uint8_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 class AccelerationRamp
 {
-    // private:
 public:
     static_assert(STAIRS > 0, "Amount of stairs has to be at least 1");
     static_assert(STAIRS <= 128, "Amount of stairs has to be at most 128");
@@ -71,11 +70,11 @@ public:
      * @brief Acceleration used for calculations. This will be greater or equal to ACCELERATION_RAD in order to reduce lookup
      * table size.
      */
-    constexpr static float UTIL_ACCELERATION_RAD = ACCELERATION_RAD * MAX_STEPS_LIM;
+    constexpr static float UTIL_ACCELERATION_RAD = ACCELERATION_RAD * MAX_STEPS_LIM / STAIRS;
 
-    constexpr static uint8_t floor_pow2_u8(uint8_t value)
+    constexpr static uint8_t floor_pow2_u8(const uint8_t value)
     {
-        for (unsigned int i = 1; i <= 256; i *= 2)
+        for (unsigned int i = 1; i < 256; i *= 2)
         {
             if (value >= i && value < i * 2)
             {
@@ -125,4 +124,4 @@ public:
     }
 };
 
-#endif //ACCELERATION_RAMP_H
+#endif // ACCELERATION_RAMP_H

@@ -11,27 +11,23 @@ namespace axis
   namespace ra
   {
     constexpr float TRANSMISSION = 35.46611505122143f;
-    
-    constexpr uint32_t SPR = 400U * 128U;
+
+    constexpr uint32_t SPR = 400UL * 256UL;
     constexpr Angle TRACKING = Angle::from_deg(360.0f / SIDEREAL) * TRANSMISSION;
-    constexpr Angle SLEWING = Angle::from_deg(4.0f) * TRANSMISSION;
+    constexpr Angle SLEWING = Angle::from_deg(2.0f) * TRANSMISSION;
 
     using pinStep = Pin<46>;
     using pinDir = Pin<47>;
     using interrupt = TimerInterrupt<Timer::TIMER_3>;
     using driver = Driver<SPR, pinStep, pinDir>;
-    using stepper = Stepper<
-        interrupt,
-        driver,
-        SLEWING.mrad_u32(),
-        4 * SLEWING.mrad_u32()>;
+    using stepper = Stepper<interrupt, driver, SLEWING.mrad_u32(), 2 * SLEWING.mrad_u32()>;
   }
 }
 
 using namespace axis::ra;
 
 stepper::MovementSpec specs[] = {
-    stepper::MovementSpec(SLEWING.rad(), 10000),
+    stepper::MovementSpec(SLEWING.rad(), 20000),
     // stepper::MovementSpec(SLEWING.rad(), 1000),
     // stepper::MovementSpec(SLEWING.rad() / 4, 1000),
     // stepper::MovementSpec(SLEWING.rad() / 4, 100),
@@ -71,19 +67,8 @@ void setup()
   Pin<52>::init();
   Pin<53>::init();
 
-  Serial.begin(115200);
-
-  // for (size_t i = 0; i < stepper::Ramp::STAIRS_COUNT; i++)
-  // {
-  //   Serial.println(stepper::Ramp::intervals[i]);
-  // }
-
   Pin<DEBUG_SETUP_TIMING_PIN>::high();
 
-  // auto x = NewtonRaphson::sqrt(2.0f * stepper::Ramp::STEP_ANGLE / stepper::Ramp::UTIL_ACCELERATION_RAD);
-  // auto y = constexpr_sqrt(2.0f * stepper::Ramp::STEP_ANGLE / stepper::Ramp::UTIL_ACCELERATION_RAD);
-  // Serial.println(x, 10);
-  // Serial.println(y, 10);
   interrupt::init();
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();

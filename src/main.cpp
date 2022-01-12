@@ -10,32 +10,28 @@ namespace axis
 {
   namespace ra
   {
-    constexpr auto TRANSMISSION = 35.46611505122143f;
-    constexpr auto SPR = 400U * 64U;
+    constexpr float TRANSMISSION = 35.46611505122143f;
 
-    constexpr auto TRACKING = Speed(360.0f / SIDEREAL * TRANSMISSION);
-    constexpr auto SLEWING = Speed(4.0f * TRANSMISSION);
+    constexpr uint32_t SPR = 400UL * 256UL;
+    constexpr Angle TRACKING = Angle::from_deg(360.0f / SIDEREAL) * TRANSMISSION;
+    constexpr Angle SLEWING = Angle::from_deg(2.0f) * TRANSMISSION;
 
     using pinStep = Pin<46>;
     using pinDir = Pin<47>;
     using interrupt = TimerInterrupt<Timer::TIMER_3>;
     using driver = Driver<SPR, pinStep, pinDir>;
-    using stepper = Stepper<
-        interrupt,
-        driver,
-        SLEWING.mrad_u32(),
-        4 * SLEWING.mrad_u32()>;
+    using stepper = Stepper<interrupt, driver, SLEWING.mrad_u32(), 2 * SLEWING.mrad_u32()>;
   }
 }
 
 using namespace axis::ra;
 
 stepper::MovementSpec specs[] = {
-    stepper::MovementSpec(SLEWING.rad(), 3000),
-    stepper::MovementSpec(SLEWING.rad(), 1000),
-    stepper::MovementSpec(SLEWING.rad() / 4, 1000),
-    stepper::MovementSpec(SLEWING.rad() / 4, 100),
-    stepper::MovementSpec(TRACKING.rad(), 5),
+    stepper::MovementSpec(SLEWING.rad(), 20000),
+    // stepper::MovementSpec(SLEWING.rad(), 1000),
+    // stepper::MovementSpec(SLEWING.rad() / 4, 1000),
+    // stepper::MovementSpec(SLEWING.rad() / 4, 100),
+    // stepper::MovementSpec(TRACKING.rad(), 5),
     // stepper::MovementSpec(TRACKING.rad() * 0.5, 5),
     // stepper::MovementSpec(TRACKING.rad(), 5),
     // stepper::MovementSpec(TRACKING.rad() * 1.5, 5),
@@ -51,7 +47,7 @@ unsigned long int millis();
 void onComplete()
 {
   completed++;
-  next_start = millis();
+  next_start = millis() + 100;
 }
 
 #ifdef ARDUINO
@@ -109,6 +105,7 @@ void loop()
 #else
 
 #include <chrono>
+#include <iostream>
 
 using namespace std::chrono;
 unsigned long int millis()
@@ -118,6 +115,15 @@ unsigned long int millis()
 
 int main(int argc, char const *argv[])
 {
+  while (1)
+  {
+    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start)
+    {
+      stepper::move(specs[started], StepperCallback::create<onComplete>());
+      started++;
+    }
+  }
+
   return 0;
 }
 

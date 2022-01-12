@@ -3,10 +3,7 @@
 
 #include <stdint.h>
 #include "NewtonRaphson.h"
-
-#define ALPHA(SPR) (2 * 3.14159265358979323846f / SPR)
-#define ALPHA_2(SPR) (2 * ALPHA(SPR))
-#define ALPHA_T(SPR, FREQ) (FREQ * ALPHA(SPR))
+#include "utils.h"
 
 template <typename T, uint8_t N>
 struct Intervals
@@ -36,7 +33,7 @@ struct Intervals
 template <uint8_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 class AccelerationRamp
 {
-private:
+public:
     static_assert(STAIRS > 0, "Amount of stairs has to be at least 1");
     static_assert(STAIRS <= 128, "Amount of stairs has to be at most 128");
     static_assert((STAIRS & (STAIRS - 1)) == 0, "Amount of stairs has to be power of 2");
@@ -46,12 +43,16 @@ private:
     static_assert(SPR > 0, "Steps per revolution has to be greater than zero");
 
     static_assert(MAX_SPEED_mRAD > 0, "Max speed has to be greater than zero");
-    
+
     static_assert(ACCELERATION_mRAD > 0, "Acceleration has to be greater than zero");
 
     /**
+     * @brief Step angle in rad
+     */
+    constexpr static float STEP_ANGLE = 2.0f * 3.14159265358979323846f / SPR;
+
+    /**
      * @brief Requested max speed in rad/s
-     * 
      */
     constexpr static float MAX_SPEED_RAD = MAX_SPEED_mRAD / 1000.0f;
 
@@ -63,7 +64,7 @@ private:
     /**
      * @brief Maximal amount of steps needed to reach max speed.
      */
-    constexpr static float MAX_STEPS_LIM = (MAX_SPEED_RAD * MAX_SPEED_RAD) / (ALPHA_2(SPR) * ACCELERATION_RAD);
+    constexpr static float MAX_STEPS_LIM = (MAX_SPEED_RAD * MAX_SPEED_RAD) / (2.0f * STEP_ANGLE * ACCELERATION_RAD);
 
     /**
      * @brief Acceleration used for calculations. This will be greater or equal to ACCELERATION_RAD in order to reduce lookup
@@ -71,22 +72,22 @@ private:
      */
     constexpr static float UTIL_ACCELERATION_RAD = ACCELERATION_RAD * MAX_STEPS_LIM / STAIRS;
 
-    constexpr static uint8_t toPow2(uint8_t value)
+    constexpr static uint8_t floor_pow2_u8(const uint8_t value)
     {
-        for (unsigned int i = 1; i <= 256; i *= 2)
+        for (unsigned int i = 1; i < 256; i *= 2)
         {
-            if (value > (i / 2) && value < i)
+            if (value >= i && value < i * 2)
             {
-                return i / 2;
+                return i;
             }
         }
-        return 1;
+        return UINT8_MAX;
     }
 
     constexpr static Intervals<uint32_t, STAIRS> calculateIntervals()
     {
         Intervals<uint32_t, STAIRS> result = {};
-        result[0] = (uint32_t)(T_FREQ * NewtonRaphson::sqrt(ALPHA_2(SPR) / (UTIL_ACCELERATION_RAD)));
+        result[0] = (uint32_t)(T_FREQ * NewtonRaphson::sqrt(2.0f * STEP_ANGLE / UTIL_ACCELERATION_RAD));
         for (uint16_t i = 1; i < STAIRS; ++i)
         {
             result[i] = (uint32_t)(result[0] * (NewtonRaphson::sqrt(i + 1) - NewtonRaphson::sqrt(i)));
@@ -96,32 +97,31 @@ private:
 
     AccelerationRamp() = delete;
 
-public:
-    constexpr static uint32_t MIN_INTERVAL = (uint32_t)(ALPHA_T(SPR, T_FREQ) / MAX_SPEED_RAD + 0.5f);
-    static_assert(MIN_INTERVAL > 0);
+    constexpr static float STEPS_PER_STAIR_IDEAL = UTIL_ACCELERATION_RAD / ACCELERATION_RAD;
+    static_assert(STEPS_PER_STAIR_IDEAL <= 128);
 
+public:
     constexpr static uint8_t STAIRS_COUNT = STAIRS;
     static_assert(STAIRS_COUNT > 0);
 
-    constexpr static uint8_t STEPS_PER_STAIR = toPow2((uint8_t)(UTIL_ACCELERATION_RAD / ACCELERATION_RAD));
+    constexpr static uint8_t STEPS_PER_STAIR = floor_pow2_u8((uint8_t)STEPS_PER_STAIR_IDEAL);
 
     static_assert(STEPS_PER_STAIR > 0, "Amount of steps per stair has to be greater than zero");
     static_assert(STEPS_PER_STAIR <= 128, "Amount of steps per stair has to be at most 128");
-    static_assert((STEPS_PER_STAIR & (STEPS_PER_STAIR - 1)) == 0, "Amount of steps per stair has to be power of 2");
-
-    constexpr static uint16_t STEPS_COUNT = static_cast<uint16_t>(STAIRS_COUNT) * static_cast<uint16_t>(STEPS_PER_STAIR);
+    static_assert(is_pow2(STEPS_PER_STAIR), "Amount of steps per stair has to be power of 2");
 
     constexpr static Intervals<uint32_t, STAIRS> intervals = calculateIntervals();
+    static_assert(intervals[0] > 0);
 
     static constexpr inline uint32_t getIntervalForSpeed(float radPerSec)
     {
-        return (uint32_t)(ALPHA_T(SPR, T_FREQ) / radPerSec + 0.5);
+        return (uint32_t)(T_FREQ * STEP_ANGLE / radPerSec + 0.5);
     }
 
-    static constexpr uint8_t maxAccelStairs(float radPerSec)
+    static constexpr inline uint8_t maxAccelStairs(float radPerSec)
     {
-        return (uint8_t)((radPerSec * radPerSec) / (ALPHA_2(SPR) * UTIL_ACCELERATION_RAD));
+        return (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD));
     }
 };
 
-#endif //ACCELERATION_RAMP_H
+#endif // ACCELERATION_RAMP_H

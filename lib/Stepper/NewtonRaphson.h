@@ -5,7 +5,7 @@ class NewtonRaphson
 private:
     NewtonRaphson(/* args */);
 
-    static double constexpr sqrt(double x, double curr, double prev)
+    static float constexpr sqrt(float x, float curr, float prev)
     {
         return curr == prev
                    ? curr
@@ -13,7 +13,7 @@ private:
     }
 
 public:
-    static double constexpr sqrt(double x)
+    static float constexpr sqrt(float x)
     {
         return sqrt(x, x, 0);
     }

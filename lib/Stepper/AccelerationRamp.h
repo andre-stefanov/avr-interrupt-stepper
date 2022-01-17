@@ -105,6 +105,8 @@ public:
     static_assert(STAIRS_COUNT > 0);
 
     constexpr static uint8_t STEPS_PER_STAIR = floor_pow2_u8((uint8_t)STEPS_PER_STAIR_IDEAL);
+    constexpr static uint8_t FIRST_STEP = 0;
+    constexpr static uint8_t LAST_STEP = STEPS_PER_STAIR - 1;
 
     static_assert(STEPS_PER_STAIR > 0, "Amount of steps per stair has to be greater than zero");
     static_assert(STEPS_PER_STAIR <= 128, "Amount of steps per stair has to be at most 128");

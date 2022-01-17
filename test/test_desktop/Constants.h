@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.h"
+#include "Angle.h"
 
 constexpr float SIDEREAL = 86164.0905f;
 

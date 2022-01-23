@@ -10,7 +10,7 @@
 #endif
 
 #include "utils.h"
-#include "Constants.h"
+#include "Angle.h"
 #include <AccelerationRamp.h>
 
 template <uint8_t T_STAIRS, uint32_t T_FREQ, uint32_t T_SPR, uint32_t T_MAX_SPEED_mRAD, uint32_t T_ACCELERATION_mRAD>
@@ -94,19 +94,21 @@ public:
 
 void test_AccelerationRamp()
 {
-    using namespace axis::ra;
+    constexpr auto TRANSMISSION = 35.46611505122143f;
 
-    constexpr auto DEG_1 = Angle::from_deg(TRANSMISSION);
-    constexpr auto DEG_4 = 4 * DEG_1;
+    constexpr auto SPEED_SLEWING_2 = Angle::from_deg(2.0f) * TRANSMISSION;
+    constexpr auto SPEED_SLEWING_4 = Angle::from_deg(4.0f) * TRANSMISSION;
+
+    // constexpr auto SPEED_TRACKING = Angle::from_deg(360.0f / SIDEREAL) * TRANSMISSION;
 
     UNITY_BEGIN();
 
-    TestCase<128U, F_CPU, 400U * 64U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 64U, DEG_4.mrad_u32(), 4 * DEG_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
-    TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 64U, SPEED_SLEWING_2.mrad_u32(), 2 * SPEED_SLEWING_2.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 64U, SPEED_SLEWING_4.mrad_u32(), 4 * SPEED_SLEWING_4.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 256U, SPEED_SLEWING_2.mrad_u32(), 2 * SPEED_SLEWING_2.mrad_u32()>::run();
+    TestCase<128U, F_CPU, 400U * 256U, SPEED_SLEWING_4.mrad_u32(), 2 * SPEED_SLEWING_4.mrad_u32()>::run();
 
-    // using TestRamp = TestCase<128U, F_CPU, 400U * 256U, DEG_4.mrad_u32(), 2 * DEG_4.mrad_u32()>::TestRamp;
+    // using TestRamp = TestCase<128U, F_CPU, 400U * 256U, SPEED_4.mrad_u32(), 2 * SPEED_4.mrad_u32()>::TestRamp;
 
     UNITY_END();
 }

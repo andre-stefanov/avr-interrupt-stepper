@@ -9,22 +9,26 @@
 #include "AccelerationRamp.h"
 #include "Stepper.h"
 
-using namespace axis::ra;
+constexpr auto MAX_SPEED = Angle::deg(100.0f);
+constexpr auto SPR = 36000LU;
 
 namespace mocks
 {
     using pin_step = PinMock<1>;
     using pin_dir = PinMock<2>;
 
-    using driver = DriverMock<400U*256U, pin_step::REAL_TYPE, pin_dir::REAL_TYPE>;
+    using driver = DriverMock<SPR, pin_step::REAL_TYPE, pin_dir::REAL_TYPE>;
 
     using timer_interrupt = TimerInterruptMock<Timer::TIMER_TEST>;
 }
 
-using stepper = Stepper<mocks::timer_interrupt::REAL_TYPE, mocks::driver::REAL_TYPE, SLEWING_SPEED.mrad_u32(), SLEWING_SPEED.mrad_u32() * 4>;
+using stepper = Stepper<mocks::timer_interrupt::REAL_TYPE, mocks::driver::REAL_TYPE, MAX_SPEED.mrad_u32(), MAX_SPEED.mrad_u32() * 4>;
 
-void move_and_assert(Angle speed, Angle distance)
+void move_and_assert_steps(Angle speed, Angle distance)
 {
+    mocks::timer_interrupt::reset();
+    mocks::driver::reset();
+
     int32_t start_position = mocks::driver::position;
     int32_t steps = mocks::driver::REAL_TYPE::SPR / 360.0f * distance.deg();
 
@@ -37,29 +41,51 @@ void move_and_assert(Angle speed, Angle distance)
 
 void test_move_full_ramp()
 {
-    mocks::timer_interrupt::reset();
-    move_and_assert(SLEWING_SPEED, Angle::from_deg(45.0f));
+    move_and_assert_steps(MAX_SPEED, Angle::deg(100.0f));
     TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::intervals[0], mocks::timer_interrupt::max_interval);
-    TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::intervals[stepper::Ramp::STAIRS_COUNT - 1], mocks::timer_interrupt::min_interval);
+    TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::getIntervalForSpeed(MAX_SPEED.rad()), mocks::timer_interrupt::min_interval);
 }
 
 void test_move_full_ramp_half_speed()
 {
-    mocks::timer_interrupt::reset();
-    move_and_assert(SLEWING_SPEED / 2, Angle::from_deg(45.0f));
+    move_and_assert_steps(MAX_SPEED / 2, Angle::deg(45.0f));
     TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::intervals[0], mocks::timer_interrupt::max_interval);
     TEST_ASSERT_GREATER_THAN_UINT32(stepper::Ramp::intervals[stepper::Ramp::STAIRS_COUNT - 1], mocks::timer_interrupt::min_interval);
 }
 
-void test_move_zero_steps()
+void test_move_full_ramp_odd()
 {
-    mocks::timer_interrupt::reset();
-    move_and_assert(SLEWING_SPEED, Angle::from_deg(0.0f));
+    move_and_assert_steps(MAX_SPEED, Angle::deg(100.01f));
+    TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::intervals[0], mocks::timer_interrupt::max_interval);
+    TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::getIntervalForSpeed(MAX_SPEED.rad()), mocks::timer_interrupt::min_interval);
 }
 
-void test_MovementSpec_run_interval()
+void test_move_full_ramp_half_speed_odd()
 {
-    // constexpr auto spec = stepper::MovementSpec(SLEWING_SPEED.rad());
+    move_and_assert_steps(MAX_SPEED / 2, Angle::deg(45.01f));
+    TEST_ASSERT_EQUAL_UINT32(stepper::Ramp::intervals[0], mocks::timer_interrupt::max_interval);
+    TEST_ASSERT_GREATER_THAN_UINT32(stepper::Ramp::intervals[stepper::Ramp::STAIRS_COUNT - 1], mocks::timer_interrupt::min_interval);
+}
+
+void test_move_part_ramp_even()
+{
+    move_and_assert_steps(MAX_SPEED, Angle::deg(1.0f));
+    TEST_ASSERT_GREATER_THAN_UINT32(stepper::Ramp::getIntervalForSpeed(MAX_SPEED.rad()), mocks::timer_interrupt::min_interval);
+}
+
+void test_move_part_ramp_odd()
+{
+    move_and_assert_steps(MAX_SPEED, Angle::deg(1.01f));
+}
+
+void test_move_1_step()
+{
+    move_and_assert_steps(MAX_SPEED, Angle::deg(0.01f));
+}
+
+void test_move_1_step_ccw()
+{
+    move_and_assert_steps(MAX_SPEED, -Angle::deg(0.01f));
 }
 
 void test_Stepper()
@@ -67,6 +93,11 @@ void test_Stepper()
     UNITY_BEGIN();
     RUN_TEST(test_move_full_ramp);
     RUN_TEST(test_move_full_ramp_half_speed);
-    RUN_TEST(test_move_zero_steps);
+    RUN_TEST(test_move_full_ramp_odd);
+    RUN_TEST(test_move_full_ramp_half_speed_odd);
+    RUN_TEST(test_move_part_ramp_even);
+    RUN_TEST(test_move_part_ramp_odd);
+    RUN_TEST(test_move_1_step);
+    RUN_TEST(test_move_1_step_ccw);
     UNITY_END();
 }

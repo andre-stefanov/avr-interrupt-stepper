@@ -27,9 +27,10 @@ public:
         position += (cw) ? 1 : -1;
     }
 
-    static void dir(bool cw)
+    static void dir(bool value)
     {
-        if (cw)
+        cw = value;
+        if (value)
         {
             T_PIN_DIR::high();
         }

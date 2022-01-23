@@ -36,6 +36,7 @@ public:
 
 private:
     static volatile bool dir;
+    static volatile uint8_t accelerated;
     static volatile uint8_t ramp_stair;
     static volatile uint8_t ramp_stair_step;
 
@@ -60,6 +61,7 @@ private:
         INTERRUPT::stop();
         INTERRUPT::setCallback(nullptr);
 
+        accelerated = 0;
         ramp_stair = 0;
         ramp_stair_step = 0;
 
@@ -107,12 +109,16 @@ private:
 
     static void pre_decelerate_handler()
     {
+        // always step first to ensure best accuracy.
+        // other calculations should be done as quick as possible below.
         DRIVER::step();
 
+        // did not reach end of this ramp stair yet
         if (ramp_stair_step > 0)
         {
             ramp_stair_step--;
         }
+        // did not reach end of pre-deceleration, switch to next stair
         else if (pre_decel_stairs_left > 0)
         {
             pre_decel_stairs_left--;
@@ -120,6 +126,7 @@ private:
             ramp_stair_step = Ramp::LAST_STEP;
             INTERRUPT::setInterval(Ramp::intervals[ramp_stair]);
         }
+        // pre-deceleration finished, it was a direction switch, accelerate
         else if (accel_steps_left > 0)
         {
             dir = !dir;
@@ -129,6 +136,7 @@ private:
             INTERRUPT::setInterval(Ramp::intervals[0]);
             INTERRUPT::setCallback(accelerate_handler);
         }
+        // pre-deceleration finished, no need to accelerate
         else
         {
             DRIVER::dir(dir);
@@ -143,6 +151,7 @@ private:
         // other calculations should be done as quick as possible below.
         DRIVER::step();
 
+        accelerated = 1;
         accel_steps_left--;
 
         // reached max amount of acceleration steps
@@ -173,12 +182,15 @@ private:
 
     static void run_handler()
     {
+        // always step first to ensure best accuracy.
+        // other calculations should be done as quick as possible below.
         DRIVER::step();
 
         if (--run_steps_left == 0)
         {
             if (ramp_stair == 0)
             {
+                Pin<53>::pulse();
                 terminate();
             }
             else
@@ -191,6 +203,8 @@ private:
 
     static void decelerate_handler()
     {
+        // always step first to ensure best accuracy.
+        // other calculations should be done as quick as possible below.
         DRIVER::step();
 
         if (ramp_stair_step > 0)
@@ -219,7 +233,7 @@ public:
 
         constexpr MovementSpec(const Angle speed, const Angle distance)
             : dir(distance.rad() > 0),
-              steps(abs(distance.rad()) / (2 * 3.14159265358979323846 / DRIVER::SPR)),
+              steps(abs(distance.rad()) / (2.0 * 3.14159265358979323846 / DRIVER::SPR) + 0.5),
               run_interval(Ramp::getIntervalForSpeed(speed.rad())),
               full_accel_stairs(Ramp::maxAccelStairs(speed.rad()))
         {
@@ -238,82 +252,136 @@ public:
 
         cb_complete = onComplete;
 
-        // if direction differs from current one, stop decelerated and move into other direction
-        // add steps needed for deceleration to the new movement to correct position
-        if (spec.dir != dir)
+        bool mv_dir = true;
+        uint8_t mv_pre_decel_stairs = 0;
+        uint16_t mv_accel_steps = 0;
+        uint32_t mv_run_steps = 0;
+        uint32_t mv_run_interval = 0;
+
+        if (spec.dir != dir && ramp_stair > 0)
         {
-            const uint16_t accel_steps = static_cast<uint16_t>(spec.full_accel_stairs) * static_cast<uint16_t>(Ramp::STEPS_PER_STAIR);
-            const uint32_t run_steps = spec.steps + (static_cast<uint16_t>(ramp_stair) * static_cast<uint16_t>(Ramp::STEPS_PER_STAIR));
-            start_movement(spec.dir, ramp_stair, accel_steps, run_steps, spec.run_interval);
-        }
-        else
-        {
-            // run at requested speed directly
-            if (spec.full_accel_stairs == ramp_stair)
+            // main movement direction opposite of current one
+            mv_dir = !dir;
+
+            // decelerate until full stop to move in other direction
+            mv_pre_decel_stairs = ramp_stair;
+
+            // we need to add steps made in pre deceleration to achieve accurate end position
+            const uint32_t mv_steps_after_pre_decel = spec.steps + (static_cast<uint16_t>(mv_pre_decel_stairs) * Ramp::STEPS_PER_STAIR);
+
+            // amount of steps needed (ideally) for full acceleration after stop
+            const uint16_t full_accel_steps = static_cast<uint32_t>(spec.full_accel_stairs) * Ramp::STEPS_PER_STAIR;
+
+            // amount of steps needed (ideally) for full acceleration + deceleration
+            const uint32_t accel_decel_steps = static_cast<uint32_t>(full_accel_steps) * 2;
+
+            // if final movement not long enough for a full acceleration + deceleration
+            if (mv_steps_after_pre_decel < accel_decel_steps)
             {
-                start_movement(spec.dir, 0, 0, spec.steps, spec.run_interval);
+                // acceleration has to before reaching its maximum
+                mv_accel_steps = mv_steps_after_pre_decel / 2;
             }
-            // accelerate to requested speed
-            if (spec.full_accel_stairs > ramp_stair)
-            {
-                // steps which will be needed for acceleration
-                uint8_t accel_stairs = spec.full_accel_stairs - ramp_stair;
-
-                if (accel_steps_left == 0 && run_steps_left > 0)
-                {
-                    accel_stairs--;
-                }
-
-                // steps which will be needed for acceleration and deceleration
-                const uint32_t accel_decel_steps = (spec.full_accel_stairs + accel_stairs) * Ramp::STEPS_PER_STAIR;
-
-                // movement to short, wont reach full speed
-                if (accel_decel_steps >= spec.steps)
-                {
-                    Pin<53>::pulse();
-                    start_movement(
-                        spec.dir,
-                        0,
-                        spec.steps / 2,
-                        0,
-                        Ramp::intervals[ramp_stair]);
-                }
-                else // perform a full accel + run + decel ramp
-                {
-                    start_movement(
-                        spec.dir,
-                        0,
-                        static_cast<uint16_t>(accel_stairs) * static_cast<uint16_t>(Ramp::STEPS_PER_STAIR),
-                        spec.steps - accel_decel_steps,
-                        spec.run_interval);
-                }
-            }
-            // decelerate to requested speed
+            // enough steps for a full ramp (accelleration + run + decelleration)
             else
             {
-                // if distance is shorter than full deceleration, need to correct in opposite direction
-                uint16_t full_decel_steps = static_cast<uint16_t>(ramp_stair) * static_cast<uint16_t>(Ramp::STEPS_PER_STAIR);
-                if (spec.steps < full_decel_steps)
-                {
-                    start_movement(
-                        !spec.dir,
-                        ramp_stair,
-                        (full_decel_steps - spec.steps) / 2,
-                        0,
-                        spec.run_interval);
-                }
-                else // decelerate to desired speed and later decelerate to stop
-                {
-                    const uint16_t decel_stairs = ramp_stair - spec.full_accel_stairs;
-                    start_movement(
-                        spec.dir,
-                        decel_stairs,
-                        0,
-                        spec.steps - decel_stairs - (static_cast<uint16_t>(spec.full_accel_stairs) * static_cast<uint16_t>(Ramp::STEPS_PER_STAIR)),
-                        spec.run_interval);
-                }
+                // acceleration will reach maximum
+                mv_accel_steps = full_accel_steps;
+
+                // there will be some steps with max speed
+                mv_run_steps = spec.steps - (mv_accel_steps * 2);
             }
         }
+        // small speed change (if at all), no need for pre-deceleration or acceleration
+        else if (spec.full_accel_stairs == ramp_stair)
+        {
+            // run all requested steps except deceleration steps (if needed)
+            mv_run_steps = spec.steps - (static_cast<uint16_t>(ramp_stair) * Ramp::STEPS_PER_STAIR);
+        }
+        // target speed is slower than current speed, we need to decelerate first
+        else if (spec.full_accel_stairs < ramp_stair)
+        {
+            // steps needed for pre-deceleration and full deceleration
+            const uint32_t total_decel_steps = static_cast<uint16_t>(ramp_stair) * Ramp::STEPS_PER_STAIR;
+
+            // not enough steps to reach target position at full stop, we need a correction in opposite direction
+            if (spec.steps < total_decel_steps)
+            {
+                // pre decelerate to full stop (overshooting actual target position)
+                mv_pre_decel_stairs = ramp_stair;
+
+                // specified steps were not enough for a full deceleration. compensation will be shorter than steps needed for full deceleration.
+                // compensate with a partial ramp (only accel + decel)
+                mv_accel_steps = (spec.steps - total_decel_steps) / 2;
+            }
+            else
+            {
+                // we need to decelerate by the diff of current and target speed first
+                mv_pre_decel_stairs = ramp_stair - spec.full_accel_stairs;
+
+                // steps at target speed are rest of all steps minus steps needed for both decelerations
+                mv_run_steps = spec.steps - total_decel_steps;
+            }
+        }
+        // requested speed higher than current one, need to accelerate
+        else
+        {
+            // steps needed for instant deceleration
+            const uint16_t immediate_decel_steps = static_cast<uint16_t>(ramp_stair + accelerated) * Ramp::STEPS_PER_STAIR;
+
+            // steps needed for full deceleration
+            const uint16_t total_decel_steps = static_cast<uint16_t>(spec.full_accel_stairs) * Ramp::STEPS_PER_STAIR;
+
+            // steps needed for acceleration between current and requested speed
+            const uint16_t accel_steps = total_decel_steps - immediate_decel_steps;
+
+            // not enough steps to even immediately decelerate, need to compensate
+            if (spec.steps < immediate_decel_steps)
+            {
+                // first decelerate to complete stop
+                mv_pre_decel_stairs = ramp_stair;
+
+                // amount of steps to compensate into opposite direction
+                uint16_t compensate_steps = spec.steps + immediate_decel_steps;
+
+                // specified steps were not enough for an immediate deceleration. compensation will be shorter.
+                // compensate with a partial ramp (only accel + decel)
+                mv_accel_steps = compensate_steps / 2;
+
+                // if amount of steps to compensate is odd, we have to add 1 step to the run phase
+                if (compensate_steps & 0x1)
+                {
+                    mv_run_steps = 1;
+                    mv_run_interval = Ramp::intervals[ramp_stair + (mv_accel_steps / Ramp::STEPS_PER_STAIR)];
+                }
+            }
+            // not enough steps for full acceleration to requested speed and later deceleration to full stop.
+            else if (spec.steps < accel_steps + total_decel_steps)
+            {
+                // only accelerate as much to decelerate to requested position
+                mv_accel_steps = spec.steps / 2;
+
+                // make just one run step in case spec.steps is odd
+                if (spec.steps & 0x1)
+                {
+                    mv_run_steps = 1;
+                    mv_run_interval = Ramp::intervals[ramp_stair + (mv_accel_steps / Ramp::STEPS_PER_STAIR)];
+                }
+            }
+            // enough steps for "full" ramp
+            else
+            {
+                // perform acceleration to requested speed
+                mv_accel_steps = accel_steps;
+
+                // amount of steps to run is requested steps minus acceleration and deceleration
+                mv_run_steps = spec.steps - accel_steps - total_decel_steps;
+
+                // we can run at requested interval
+                mv_run_interval = spec.run_interval;
+            }
+        }
+
+        start_movement(mv_dir, mv_pre_decel_stairs, mv_accel_steps, mv_run_steps, mv_run_interval);
 
         PROFILE_MOVE_END();
     }
@@ -321,6 +389,9 @@ public:
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 bool volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::dir = true;
+
+template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
+uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::accelerated = 0;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::ramp_stair = 0;

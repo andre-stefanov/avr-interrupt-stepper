@@ -14,9 +14,9 @@ private:
     }
 
 public:
-    constexpr Angle operator*(const Angle &y) const
+    constexpr Angle operator-(const float x) const
     {
-        return y * _rad;
+        return Angle(_rad * x);
     }
 
     constexpr Angle operator*(const float x) const
@@ -51,7 +51,7 @@ public:
 
     // FACTORIES
 
-    constexpr static Angle from_deg(float value)
+    constexpr static Angle deg(float value)
     {
         return Angle(value * 0.017453292519943295769236907684886f);
     }
@@ -66,6 +66,11 @@ public:
         return from_rad(value / 1000.0f);
     }
 };
+
+constexpr Angle operator-(const Angle &y)
+{
+    return Angle::from_rad(-y.rad());
+}
 
 constexpr Angle operator*(const float x, const Angle &y)
 {

@@ -7,7 +7,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "utils.h"
 #include "Angle.h"
 #include <AccelerationRamp.h>
 
@@ -18,8 +17,8 @@ class TestCase
 
     typedef AccelerationRamp<T_STAIRS, T_FREQ, T_SPR, T_MAX_SPEED_mRAD, T_ACCELERATION_mRAD> TestRamp;
 
-    constexpr static Angle MAX_SPEED = Angle::from_mrad_u32(T_MAX_SPEED_mRAD);
-    constexpr static Angle ACCELERATION = Angle::from_mrad_u32(T_ACCELERATION_mRAD);
+    constexpr static Angle MAX_SPEED = Angle::mrad_u32(T_MAX_SPEED_mRAD);
+    constexpr static Angle ACCELERATION = Angle::mrad_u32(T_ACCELERATION_mRAD);
 
     static void test_stairs_count()
     {
@@ -28,9 +27,8 @@ class TestCase
 
     static void test_steps_per_stair()
     {
-        auto max_s_lim = (MAX_SPEED.rad() * MAX_SPEED.rad()) / (2 * (2 * 3.14159265358979323846f / T_SPR) * ACCELERATION.rad());
+        auto max_s_lim = (MAX_SPEED.rad() * MAX_SPEED.rad()) / (2 * (2 * M_PI / T_SPR) * ACCELERATION.rad());
         auto steps_per_stair = max_s_lim / T_STAIRS;
-        TEST_ASSERT_TRUE(is_pow2(TestRamp::STEPS_PER_STAIR));
         TEST_ASSERT_LESS_OR_EQUAL(steps_per_stair, TestRamp::STEPS_PER_STAIR);
     }
 

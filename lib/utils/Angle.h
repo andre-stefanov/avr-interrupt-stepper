@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "etl/type_def.h"
 
 class Angle
 {
@@ -17,6 +16,11 @@ public:
     constexpr Angle operator-(const float x) const
     {
         return Angle(_rad * x);
+    }
+
+    constexpr Angle operator+(const float x) const
+    {
+        return Angle(_rad + x);
     }
 
     constexpr Angle operator*(const float x) const
@@ -56,20 +60,20 @@ public:
         return Angle(value * 0.017453292519943295769236907684886f);
     }
 
-    constexpr static Angle from_rad(float value)
+    constexpr static Angle rad(float value)
     {
         return Angle(value);
     }
 
-    constexpr static Angle from_mrad_u32(uint32_t value)
+    constexpr static Angle mrad_u32(uint32_t value)
     {
-        return from_rad(value / 1000.0f);
+        return rad(value / 1000.0f);
     }
 };
 
 constexpr Angle operator-(const Angle &y)
 {
-    return Angle::from_rad(-(y.rad()));
+    return Angle::rad(-(y.rad()));
 }
 
 constexpr Angle operator*(const float x, const Angle &y)
@@ -81,6 +85,3 @@ constexpr Angle operator/(const float x, const Angle &y)
 {
     return y / x;
 }
-
-ETL_TYPEDEF(Angle, AngleSpeed);
-ETL_TYPEDEF(Angle, AngleDistance);

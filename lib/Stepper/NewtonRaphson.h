@@ -3,7 +3,7 @@
 class NewtonRaphson
 {
 private:
-    NewtonRaphson(/* args */);
+    NewtonRaphson() = delete;
 
     static float constexpr sqrt(float x, float curr, float prev)
     {

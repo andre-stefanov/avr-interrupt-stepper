@@ -6,8 +6,6 @@
 #include "Stepper.h"
 #include "Angle.h"
 
-#include "utils.h"
-
 #include <limits.h>
 
 constexpr auto SIDEREAL = 86164.0905f;

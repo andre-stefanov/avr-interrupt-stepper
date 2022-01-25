@@ -1,7 +1,3 @@
-#include <unity.h>
-
-#include <stdio.h>
-
 void test_AccelerationRamp();
 void test_Stepper();
 

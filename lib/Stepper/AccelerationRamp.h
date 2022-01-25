@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "NewtonRaphson.h"
-#include "utils.h"
 
 template <typename T, uint8_t N>
 struct Intervals
@@ -33,7 +32,12 @@ struct Intervals
 template <uint8_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 class AccelerationRamp
 {
-public:
+    template <typename T>
+    constexpr static inline bool is_pow2(const T value)
+    {
+        return (value & (value - 1)) == 0;
+    }
+
     static_assert(STAIRS > 0, "Amount of stairs has to be at least 1");
     static_assert(STAIRS <= 128, "Amount of stairs has to be at most 128");
     static_assert(is_pow2(STAIRS), "Amount of stairs has to be power of 2");

@@ -3,8 +3,6 @@
 #define CUSTOM_TIMER_INTERRUPT_IMPL
 #include "TimerInterrupt.h"
 
-#include "math.h"
-
 enum class Timer : int
 {
     TIMER_TEST = 1

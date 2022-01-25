@@ -1,6 +1,5 @@
 #include <unity.h>
 
-#include "Constants.h"
 #include "mocks/PinMock.h"
 #include "mocks/DriverMock.h"
 #include "mocks/TimerInterruptMock.h"

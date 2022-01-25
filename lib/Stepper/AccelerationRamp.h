@@ -36,7 +36,7 @@ class AccelerationRamp
 public:
     static_assert(STAIRS > 0, "Amount of stairs has to be at least 1");
     static_assert(STAIRS <= 128, "Amount of stairs has to be at most 128");
-    static_assert((STAIRS & (STAIRS - 1)) == 0, "Amount of stairs has to be power of 2");
+    static_assert(is_pow2(STAIRS), "Amount of stairs has to be power of 2");
 
     static_assert(T_FREQ > 0, "Timer frequency has to be greater than zero");
 
@@ -87,10 +87,12 @@ public:
     constexpr static Intervals<uint32_t, STAIRS> calculateIntervals()
     {
         Intervals<uint32_t, STAIRS> result = {};
-        result[0] = (uint32_t)(T_FREQ * NewtonRaphson::sqrt(2.0f * STEP_ANGLE / UTIL_ACCELERATION_RAD));
-        for (uint16_t i = 1; i < STAIRS; ++i)
+        float c0 = T_FREQ * NewtonRaphson::sqrt(2.0f * STEP_ANGLE / UTIL_ACCELERATION_RAD);
+        result[0] = UINT32_MAX;
+        result[1] = (uint32_t)(T_FREQ * NewtonRaphson::sqrt(2.0f * STEP_ANGLE / UTIL_ACCELERATION_RAD));
+        for (uint16_t i = 2; i < STAIRS; ++i)
         {
-            result[i] = (uint32_t)(result[0] * (NewtonRaphson::sqrt(i + 1) - NewtonRaphson::sqrt(i)));
+            result[i] = (uint32_t)(c0 * (NewtonRaphson::sqrt(i + 1) - NewtonRaphson::sqrt(i)));
         }
         return result;
     }
@@ -122,7 +124,15 @@ public:
 
     static constexpr inline uint8_t maxAccelStairs(float radPerSec)
     {
-        return (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD));
+        uint8_t calculated = (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD) + 0.5);
+        if (calculated < STAIRS)
+        {
+            return calculated;
+        }
+        else
+        {
+            return STAIRS - 1;
+        }
     }
 };
 

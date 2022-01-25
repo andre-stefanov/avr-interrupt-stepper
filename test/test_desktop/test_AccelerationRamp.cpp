@@ -1,7 +1,5 @@
 #include <unity.h>
 
-#define F_CPU 16000000
-
 #include <stdio.h>
 #include <math.h>
 
@@ -18,7 +16,6 @@ class TestCase
 {
     TestCase() = delete;
 
-public:
     typedef AccelerationRamp<T_STAIRS, T_FREQ, T_SPR, T_MAX_SPEED_mRAD, T_ACCELERATION_mRAD> TestRamp;
 
     constexpr static Angle MAX_SPEED = Angle::from_mrad_u32(T_MAX_SPEED_mRAD);
@@ -55,7 +52,7 @@ public:
 
     static void test_maxAccelStairs_speed_max()
     {
-        TEST_ASSERT_EQUAL_UINT8(T_STAIRS, TestRamp::maxAccelStairs(MAX_SPEED.rad()));
+        TEST_ASSERT_EQUAL_UINT8(T_STAIRS - 1, TestRamp::maxAccelStairs(MAX_SPEED.rad()));
     }
 
     static void test_maxAccelStairs_speed_half()
@@ -68,7 +65,7 @@ public:
         constexpr double rad_per_step = 2.0 * M_PI / T_SPR;
         constexpr double step_freq = MAX_SPEED.rad() / rad_per_step;
         constexpr double interval = T_FREQ / step_freq;
-        TEST_ASSERT_FLOAT_WITHIN(1, interval, TestRamp::getIntervalForSpeed(MAX_SPEED.rad()));
+        TEST_ASSERT_FLOAT_WITHIN(0.5, interval, TestRamp::getIntervalForSpeed(MAX_SPEED.rad()));
     }
 
     static void test_getIntervalForSpeed_half()
@@ -79,8 +76,30 @@ public:
         TEST_ASSERT_FLOAT_WITHIN(1, interval, TestRamp::getIntervalForSpeed(MAX_SPEED.rad() / 2));
     }
 
+    static void dump()
+    {
+        UNITY_PRINT_EOL();
+        UnityPrint("Test case");
+        UNITY_PRINT_EOL();
+        UnityPrint("STAIRS: ");
+        UnityPrintNumber(T_STAIRS);
+        UNITY_PRINT_EOL();
+        UnityPrint("SPR: ");
+        UnityPrintNumber(T_SPR);
+        UNITY_PRINT_EOL();
+        UnityPrint("MAX_SPEED: ");
+        UnityPrintFloat(MAX_SPEED.deg());
+        UNITY_PRINT_EOL();
+        UnityPrint("ACCELERATION: ");
+        UnityPrintFloat(ACCELERATION.deg());
+        UNITY_PRINT_EOL();
+    }
+
+public:
     static void run()
     {
+        dump();
+
         RUN_TEST(test_stairs_count);
         RUN_TEST(test_steps_per_stair);
         RUN_TEST(test_acceleration_intervals_decrementing);
@@ -96,13 +115,15 @@ void test_AccelerationRamp()
 {
     constexpr auto TRANSMISSION = 35.46611505122143f;
 
-    constexpr auto SPEED_SLEWING_2 = Angle::from_deg(2.0f) * TRANSMISSION;
-    constexpr auto SPEED_SLEWING_4 = Angle::from_deg(4.0f) * TRANSMISSION;
+    constexpr auto SPEED_SLEWING_2 = Angle::deg(2.0f) * TRANSMISSION;
+    constexpr auto SPEED_SLEWING_4 = Angle::deg(4.0f) * TRANSMISSION;
 
-    // constexpr auto SPEED_TRACKING = Angle::from_deg(360.0f / SIDEREAL) * TRANSMISSION;
+    // constexpr auto SPEED_TRACKING = Angle::deg(360.0f / SIDEREAL) * TRANSMISSION;
 
     UNITY_BEGIN();
 
+    TestCase<64U, F_CPU, 400U * 64U, SPEED_SLEWING_2.mrad_u32(), 2 * SPEED_SLEWING_2.mrad_u32()>::run();
+    TestCase<64U, F_CPU, 400U * 64U, SPEED_SLEWING_4.mrad_u32(), 4 * SPEED_SLEWING_4.mrad_u32()>::run();
     TestCase<128U, F_CPU, 400U * 64U, SPEED_SLEWING_2.mrad_u32(), 2 * SPEED_SLEWING_2.mrad_u32()>::run();
     TestCase<128U, F_CPU, 400U * 64U, SPEED_SLEWING_4.mrad_u32(), 4 * SPEED_SLEWING_4.mrad_u32()>::run();
     TestCase<128U, F_CPU, 400U * 256U, SPEED_SLEWING_2.mrad_u32(), 2 * SPEED_SLEWING_2.mrad_u32()>::run();

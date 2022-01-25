@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "Angle.h"
 
-#define RAMP_STAIRS 64
+#define RAMP_STAIRS 128
 
 using StepperCallback = etl::delegate<void()>;
 
@@ -36,7 +36,6 @@ public:
 
 private:
     static volatile bool dir;
-    static volatile uint8_t accelerated;
     static volatile uint8_t ramp_stair;
     static volatile uint8_t ramp_stair_step;
 
@@ -61,7 +60,6 @@ private:
         INTERRUPT::stop();
         INTERRUPT::setCallback(nullptr);
 
-        accelerated = 0;
         ramp_stair = 0;
         ramp_stair_step = 0;
 
@@ -84,20 +82,27 @@ private:
         Class::accel_steps_left = accel_steps;
         Class::run_steps_left = run_steps;
         Class::run_interval = run_interval;
-
+        
+        // we need to pre-decelerate first (direction change or lower speed)
         if (pre_decel_stairs > 0)
         {
             Class::ramp_stair_step = Ramp::LAST_STEP;
             INTERRUPT::setInterval(Ramp::intervals[Class::ramp_stair]);
             INTERRUPT::setCallback(pre_decelerate_handler);
         }
+        // accelerate (faster speed)
         else if (accel_steps > 0)
         {
+            Pin<53>::pulse();
+            if (ramp_stair == 0) {
+                ramp_stair = 1;
+            }
             Class::dir = direction;
             DRIVER::dir(dir);
             INTERRUPT::setInterval(Ramp::intervals[Class::ramp_stair]);
             INTERRUPT::setCallback(accelerate_handler);
         }
+        // run directly, requested speed is similar to current one
         else
         {
             Class::dir = direction;
@@ -151,7 +156,6 @@ private:
         // other calculations should be done as quick as possible below.
         DRIVER::step();
 
-        accelerated = 1;
         accel_steps_left--;
 
         // reached max amount of acceleration steps
@@ -211,7 +215,7 @@ private:
         {
             ramp_stair_step--;
         }
-        else if (ramp_stair > 0)
+        else if (ramp_stair > 1)
         {
             ramp_stair--;
             ramp_stair_step = Ramp::LAST_STEP;
@@ -252,7 +256,6 @@ public:
 
         cb_complete = onComplete;
 
-        bool mv_dir = true;
         uint8_t mv_pre_decel_stairs = 0;
         uint16_t mv_accel_steps = 0;
         uint32_t mv_run_steps = 0;
@@ -260,9 +263,6 @@ public:
 
         if (spec.dir != dir && ramp_stair > 0)
         {
-            // main movement direction opposite of current one
-            mv_dir = !dir;
-
             // decelerate until full stop to move in other direction
             mv_pre_decel_stairs = ramp_stair;
 
@@ -326,7 +326,7 @@ public:
         else
         {
             // steps needed for instant deceleration
-            const uint16_t immediate_decel_steps = static_cast<uint16_t>(ramp_stair + accelerated) * Ramp::STEPS_PER_STAIR;
+            const uint16_t immediate_decel_steps = static_cast<uint16_t>(ramp_stair) * Ramp::STEPS_PER_STAIR;
 
             // steps needed for full deceleration
             const uint16_t total_decel_steps = static_cast<uint16_t>(spec.full_accel_stairs) * Ramp::STEPS_PER_STAIR;
@@ -381,7 +381,7 @@ public:
             }
         }
 
-        start_movement(mv_dir, mv_pre_decel_stairs, mv_accel_steps, mv_run_steps, mv_run_interval);
+        start_movement(spec.dir, mv_pre_decel_stairs, mv_accel_steps, mv_run_steps, mv_run_interval);
 
         PROFILE_MOVE_END();
     }
@@ -389,9 +389,6 @@ public:
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 bool volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::dir = true;
-
-template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
-uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::accelerated = 0;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::ramp_stair = 0;

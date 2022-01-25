@@ -27,7 +27,6 @@ public:
 #ifndef CUSTOM_TIMER_INTERRUPT_IMPL
 
 #if defined(ARDUINO_ARCH_AVR)
-#define USE_STEPPER_TIMER_3
 #include "TimerInterrupt_AVR.h"
 #else
 #include "TimerInterrupt_Delegate.h"

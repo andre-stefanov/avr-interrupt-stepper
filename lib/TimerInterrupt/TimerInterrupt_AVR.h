@@ -97,39 +97,6 @@ struct TimerInterrupt_AVR
 };
 
 template <Timer T>
-volatile uint16_t TimerInterrupt_AVR<T>::ovf_cnt = 0;
-
-template <Timer T>
-volatile uint16_t TimerInterrupt_AVR<T>::ovf_left = 0;
-
-#if defined(USE_STEPPER_TIMER_3) && !defined(USE_STEPPER_TIMER_3_INITIALIZED)
-#define USE_STEPPER_TIMER_3_INITIALIZED
-
-template <>
-volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tccra = &TCCR3A;
-template <>
-volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tccrb = &TCCR3B;
-template <>
-volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_timsk = &TIMSK3;
-template <>
-volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tifr = &TIFR3;
-template <>
-volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tcnt = &TCNT3;
-template <>
-volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_ocra = &OCR3A;
-
-template <Timer T>
-volatile timer_callback TimerInterrupt_AVR<T>::callback = nullptr;
-
-ISR(TIMER3_OVF_vect) { TimerInterrupt_AVR<Timer::TIMER_3>::handle_overflow(); }
-ISR(TIMER3_COMPA_vect) { TimerInterrupt_AVR<Timer::TIMER_3>::handle_compare_match(); }
-
-#endif
-
-template <Timer T>
-const unsigned long int TimerInterrupt<T>::FREQ = F_CPU;
-
-template <Timer T>
 void TimerInterrupt<T>::init()
 {
     cli();                                      // disable interrupts
@@ -184,8 +151,133 @@ inline __attribute__((always_inline)) void TimerInterrupt<T>::stop()
 
     // set counter to 0
     *TimerInterrupt_AVR<T>::_tcnt = 0;
-    
+
     Pin<48>::pulse();
 }
 
 #endif
+
+template <Timer T>
+volatile uint16_t TimerInterrupt_AVR<T>::ovf_cnt = 0;
+
+template <Timer T>
+volatile uint16_t TimerInterrupt_AVR<T>::ovf_left = 0;
+
+#if defined(USE_STEPPER_TIMER_1) && !defined(USE_STEPPER_TIMER_1_INITIALIZED)
+#define USE_STEPPER_TIMER_1_INITIALIZED
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_tccra = &TCCR1A;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_tccrb = &TCCR1B;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_timsk = &TIMSK1;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_tifr = &TIFR1;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_tcnt = &TCNT1;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_1>::_ocra = &OCR1A;
+
+template <Timer T>
+volatile timer_callback TimerInterrupt_AVR<T>::callback = nullptr;
+
+ISR(TIMER1_OVF_vect) { TimerInterrupt_AVR<Timer::TIMER_1>::handle_overflow(); }
+ISR(TIMER1_COMPA_vect) { TimerInterrupt_AVR<Timer::TIMER_1>::handle_compare_match(); }
+
+#endif
+
+#if defined(USE_STEPPER_TIMER_3) && !defined(USE_STEPPER_TIMER_3_INITIALIZED)
+#define USE_STEPPER_TIMER_3_INITIALIZED
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tccra = &TCCR3A;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tccrb = &TCCR3B;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_timsk = &TIMSK3;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tifr = &TIFR3;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_tcnt = &TCNT3;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_3>::_ocra = &OCR3A;
+
+template <Timer T>
+volatile timer_callback TimerInterrupt_AVR<T>::callback = nullptr;
+
+ISR(TIMER3_OVF_vect) { TimerInterrupt_AVR<Timer::TIMER_3>::handle_overflow(); }
+ISR(TIMER3_COMPA_vect) { TimerInterrupt_AVR<Timer::TIMER_3>::handle_compare_match(); }
+
+#endif
+
+#if defined(USE_STEPPER_TIMER_4) && !defined(USE_STEPPER_TIMER_4_INITIALIZED)
+#define USE_STEPPER_TIMER_4_INITIALIZED
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_tccra = &TCCR4A;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_tccrb = &TCCR4B;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_timsk = &TIMSK4;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_tifr = &TIFR4;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_tcnt = &TCNT4;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_4>::_ocra = &OCR4A;
+
+template <Timer T>
+volatile timer_callback TimerInterrupt_AVR<T>::callback = nullptr;
+
+ISR(TIMER4_OVF_vect) { TimerInterrupt_AVR<Timer::TIMER_4>::handle_overflow(); }
+ISR(TIMER4_COMPA_vect) { TimerInterrupt_AVR<Timer::TIMER_4>::handle_compare_match(); }
+
+#endif
+
+#if defined(USE_STEPPER_TIMER_5) && !defined(USE_STEPPER_TIMER_5_INITIALIZED)
+#define USE_STEPPER_TIMER_5_INITIALIZED
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_tccra = &TCCR5A;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_tccrb = &TCCR5B;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_timsk = &TIMSK5;
+
+template <>
+volatile uint8_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_tifr = &TIFR5;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_tcnt = &TCNT5;
+
+template <>
+volatile uint16_t *const TimerInterrupt_AVR<Timer::TIMER_5>::_ocra = &OCR5A;
+
+template <Timer T>
+volatile timer_callback TimerInterrupt_AVR<T>::callback = nullptr;
+
+ISR(TIMER5_OVF_vect) { TimerInterrupt_AVR<Timer::TIMER_5>::handle_overflow(); }
+ISR(TIMER5_COMPA_vect) { TimerInterrupt_AVR<Timer::TIMER_5>::handle_compare_match(); }
+
+#endif
+
+template <Timer T>
+const unsigned long int TimerInterrupt<T>::FREQ = F_CPU;

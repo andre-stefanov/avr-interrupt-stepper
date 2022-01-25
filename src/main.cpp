@@ -1,3 +1,5 @@
+#define USE_STEPPER_TIMER_1
+
 #include "Pin.h"
 #include "Driver.h"
 #include "TimerInterrupt.h"
@@ -15,23 +17,23 @@ namespace axis
   {
     constexpr float TRANSMISSION = 35.46611505122143f;
 
-    // constexpr uint32_t SPR = 400UL * 256UL;
-    constexpr uint32_t SPR = 36000UL;
+    constexpr uint32_t SPR = 400UL * 256UL;
+    // constexpr uint32_t SPR = 36000UL;
     constexpr Angle TRACKING = Angle::deg(360.0f / SIDEREAL) * TRANSMISSION;
-    constexpr Angle SLEWING_SPEED = Angle::deg(2.0f) * TRANSMISSION;
+    constexpr Angle SLEWING_SPEED = Angle::deg(4.0f) * TRANSMISSION;
 
     using pinStep = Pin<46>;
     using pinDir = Pin<47>;
-    using interrupt = TimerInterrupt<Timer::TIMER_3>;
+    using interrupt = TimerInterrupt<Timer::TIMER_1>;
     using driver = Driver<SPR, pinStep, pinDir>;
-    using stepper = Stepper<interrupt, driver, SLEWING_SPEED.mrad_u32(), 2 * SLEWING_SPEED.mrad_u32()>;
+    using stepper = Stepper<interrupt, driver, SLEWING_SPEED.mrad_u32(), 4 * SLEWING_SPEED.mrad_u32()>;
   }
 }
 
 using namespace axis::ra;
 
 stepper::MovementSpec specs[] = {
-    // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(45.0f)),  // full ramp, full speed
+    stepper::MovementSpec(SLEWING_SPEED, Angle::deg(45.0f)),  // full ramp, full speed
     // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(10.0f)),  // part. ramp, full speed
     // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(-10.0f)), // part. ramp, full speed, inv. dir
     // stepper::MovementSpec(SLEWING_SPEED / 4, Angle::deg(10.0f)),
@@ -42,7 +44,7 @@ stepper::MovementSpec specs[] = {
     // stepper::MovementSpec(TRACKING.rad() * 1.5, 5),
     // stepper::MovementSpec(TRACKING.rad(), 5),
     // stepper::MovementSpec(TRACKING, Angle::deg(0)),
-    stepper::MovementSpec(SLEWING_SPEED, Angle::deg(-360.0 / driver::SPR * 1001)),
+    // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(-360.0 / driver::SPR * 1001)),
 };
 
 unsigned int started = 0;

@@ -69,7 +69,7 @@ public:
 
 constexpr Angle operator-(const Angle &y)
 {
-    return Angle::from_rad(-y.rad());
+    return Angle::from_rad(-(y.rad()));
 }
 
 constexpr Angle operator*(const float x, const Angle &y)

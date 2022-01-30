@@ -35,7 +35,6 @@ template <uint8_t PIN>
 void Pin<PIN>::init()
 {
     PinRegisters<PIN>::init();
-    pulse();
 }
 
 template <uint8_t PIN>

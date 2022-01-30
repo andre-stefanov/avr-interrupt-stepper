@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
-#define DEBUG_INTERRUPT_TIMING_PIN 0
+#define DEBUG_INTERRUPT_TIMING_PIN 39
 #if DEBUG_INTERRUPT_TIMING_PIN != 0 && UNIT_TEST != 1
 #include <Pin.h>
 #define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
@@ -123,6 +123,8 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uin
 
     // set prescaler to 1 (count at MCU frequency)
     *IntervalInterrupt_AVR<T>::_tccrb |= 1;
+
+    Pin<37>::pulse();
 }
 
 template <Timer T>
@@ -139,6 +141,8 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::stop()
 
     // set counter to 0
     *IntervalInterrupt_AVR<T>::_tcnt = 0;
+
+    Pin<37>::pulse();
 }
 
 template<Timer timer>

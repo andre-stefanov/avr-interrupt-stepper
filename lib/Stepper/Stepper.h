@@ -1,10 +1,10 @@
 #pragma once
 
-#define PROFILE_STEPPER 0
+#define PROFILE_STEPPER 1
 #if PROFILE_STEPPER && defined(ARDUINO)
 #include "Pin.h"
-#define PROFILE_MOVE_BEGIN() Pin<52>::high()
-#define PROFILE_MOVE_END() Pin<52>::low()
+#define PROFILE_MOVE_BEGIN() Pin<45>::high()
+#define PROFILE_MOVE_END() Pin<45>::low()
 #else
 #define PROFILE_MOVE_BEGIN()
 #define PROFILE_MOVE_END()
@@ -121,12 +121,18 @@ private:
             INTERRUPT::setCallback(accelerate_handler);
         }
         // run directly, requested speed is similar to current one
-        else
+        else if (run_steps > 0)
         {
             Class::dir = direction;
             DRIVER::dir(dir);
             INTERRUPT::setInterval(run_interval);
             INTERRUPT::setCallback(run_handler);
+        }
+        // decelerate until stopped
+        else
+        {
+            INTERRUPT::setInterval(Ramp::intervals[ramp_stair]);
+            INTERRUPT::setCallback(decelerate_handler);
         }
     }
 
@@ -367,6 +373,9 @@ public:
 
                 // there will be some steps with max speed
                 mv_run_steps = spec.steps - (mv_accel_steps * 2);
+
+                // run at requested speed
+                mv_run_interval = spec.run_interval;
             }
         }
         // small speed change (if at all), no need for pre-deceleration or acceleration
@@ -374,6 +383,9 @@ public:
         {
             // run all requested steps except deceleration steps (if needed)
             mv_run_steps = spec.steps - (static_cast<uint16_t>(ramp_stair) * Ramp::STEPS_PER_STAIR);
+
+            // run at requested speed
+            mv_run_interval = spec.run_interval;
         }
         // target speed is slower than current speed, we need to decelerate first
         else if (spec.full_accel_stairs < ramp_stair)

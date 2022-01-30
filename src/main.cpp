@@ -18,11 +18,11 @@ namespace axis
 
     constexpr uint32_t SPR = 400UL * 256UL;
     // constexpr uint32_t SPR = 36000UL;
-    constexpr Angle TRACKING = Angle::deg(360.0f / SIDEREAL) * TRANSMISSION;
+    constexpr Angle TRACKING_SPEED = Angle::deg(360.0f / SIDEREAL) * TRANSMISSION;
     constexpr Angle SLEWING_SPEED = Angle::deg(4.0f) * TRANSMISSION;
 
-    using pinStep = Pin<46>;
-    using pinDir = Pin<47>;
+    using pinStep = Pin<33>;
+    using pinDir = Pin<35>;
     using interrupt = IntervalInterrupt<Timer::TIMER_1>;
     using driver = Driver<SPR, pinStep, pinDir>;
     using stepper = Stepper<interrupt, driver, SLEWING_SPEED.mrad_u32(), 4 * SLEWING_SPEED.mrad_u32()>;
@@ -40,12 +40,12 @@ stepper::MovementSpec specs[] = {
     // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(-10.0f)), // part. ramp, full speed, inv. dir
     // stepper::MovementSpec(SLEWING_SPEED / 4, Angle::deg(10.0f)),
     // stepper::MovementSpec(SLEWING_SPEED.rad() / 4, 100),
-    // stepper::MovementSpec(TRACKING, Angle::deg(0.1)),
-    // stepper::MovementSpec(TRACKING.rad() * 0.5, 5),
-    // stepper::MovementSpec(TRACKING.rad(), 5),
-    // stepper::MovementSpec(TRACKING.rad() * 1.5, 5),
-    // stepper::MovementSpec(TRACKING.rad(), 5),
-    // stepper::MovementSpec(TRACKING, Angle::deg(0)),
+    // stepper::MovementSpec(TRACKING_SPEED, Angle::deg(0.1)),
+    // stepper::MovementSpec(TRACKING_SPEED.rad() * 0.5, 5),
+    // stepper::MovementSpec(TRACKING_SPEED.rad(), 5),
+    // stepper::MovementSpec(TRACKING_SPEED.rad() * 1.5, 5),
+    // stepper::MovementSpec(TRACKING_SPEED.rad(), 5),
+    // stepper::MovementSpec(TRACKING_SPEED, Angle::deg(0)),
     // stepper::MovementSpec(SLEWING_SPEED, Angle::deg(-360.0 / driver::SPR * 1001)),
 };
 
@@ -62,36 +62,41 @@ void onComplete()
 #ifdef ARDUINO
 #include <Arduino.h>
 
-#define DEBUG_LOOP_TIMING_PIN 50
-#define DEBUG_SETUP_TIMING_PIN 51
+#define DEBUG_LOOP_TIMING_PIN 41
+#define DEBUG_SETUP_TIMING_PIN 43
 
 void setup()
 {
   pinStep::init();
   pinDir::init();
-  Pin<48>::init();
-  Pin<49>::init();
-  Pin<50>::init();
-  Pin<51>::init();
-  Pin<52>::init();
-  Pin<53>::init();
+  Pin<37>::init();
+  Pin<39>::init();
+  Pin<41>::init();
+  Pin<43>::init();
+  Pin<45>::init();
+  Pin<47>::init();
 
   Pin<DEBUG_SETUP_TIMING_PIN>::high();
 
   interrupt::init();
 
   Pin<DEBUG_SETUP_TIMING_PIN>::low();
+
+  pinDir::pulse();
+  stepper::moveTime(SLEWING_SPEED, 1000);
+
+  constexpr stepper::MovementSpec s(TRACKING_SPEED, TRACKING_SPEED / 1000.0f * 1000);
 }
 
 void loop()
 {
-  stepper::moveBy(SLEWING_SPEED / 2, Angle::deg(90.0f));
-  delay(500);
-  stepper::moveBy(SLEWING_SPEED, Angle::deg(45.0f));
-  do
-  {
-    // nothing
-  } while (true);
+  // stepper::moveBy(SLEWING_SPEED / 2, Angle::deg(90.0f));
+  // delay(500);
+  // stepper::moveBy(SLEWING_SPEED, Angle::deg(45.0f));
+  // do
+  // {
+  //   // nothing
+  // } while (true);
 
   // do
   // {
@@ -106,6 +111,12 @@ void loop()
   //   }
   //   Pin<DEBUG_LOOP_TIMING_PIN>::low();
   // } while (1);
+
+  do
+  {
+    Pin<DEBUG_LOOP_TIMING_PIN>::pulse();
+  } while (1);
+  
 }
 
 #else

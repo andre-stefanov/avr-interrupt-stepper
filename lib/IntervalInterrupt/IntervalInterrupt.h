@@ -7,10 +7,10 @@ typedef void (*timer_callback)(void);
 enum class Timer : int;
 
 template <Timer T>
-class TimerInterrupt
+class IntervalInterrupt
 {
 private:
-    TimerInterrupt() = delete;
+    IntervalInterrupt() = delete;
 
 public:
     const static unsigned long int FREQ;
@@ -27,9 +27,9 @@ public:
 #ifndef CUSTOM_TIMER_INTERRUPT_IMPL
 
 #if defined(ARDUINO_ARCH_AVR)
-#include "TimerInterrupt_AVR.h"
+#include "IntervalInterrupt_AVR.h"
 #else
-#include "TimerInterrupt_Delegate.h"
+#include "IntervalInterrupt_Delegate.h"
 #endif
 
 #endif // CUSTOM_TIMER_INTERRUPT_IMPL

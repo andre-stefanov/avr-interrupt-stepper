@@ -2,7 +2,7 @@
 
 #include "mocks/PinMock.h"
 #include "mocks/DriverMock.h"
-#include "mocks/TimerInterruptMock.h"
+#include "mocks/IntervalInterruptMock.h"
 #include "AccelerationRamp.h"
 #include "Stepper.h"
 
@@ -19,7 +19,7 @@ namespace mocks
 
     using driver = DriverMock<SPR, pin_step::REAL_TYPE, pin_dir::REAL_TYPE>;
 
-    using timer_interrupt = TimerInterruptMock<Timer::TIMER_TEST>;
+    using timer_interrupt = IntervalInterruptMock<Timer::TIMER_TEST>;
 }
 
 using stepper = Stepper<mocks::timer_interrupt::REAL_TYPE, mocks::driver::REAL_TYPE, MAX_SPEED.mrad_u32(), MAX_SPEED.mrad_u32() * 4>;

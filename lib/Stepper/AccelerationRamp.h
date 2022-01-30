@@ -123,12 +123,12 @@ public:
 
     static constexpr inline uint32_t getIntervalForSpeed(float radPerSec)
     {
-        return (uint32_t)(T_FREQ * STEP_ANGLE / radPerSec + 0.5);
+        return (uint32_t)(T_FREQ * STEP_ANGLE / radPerSec + 0.5f);
     }
 
     static constexpr inline uint8_t maxAccelStairs(float radPerSec)
     {
-        uint8_t calculated = (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD) + 0.5);
+        uint8_t calculated = (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD) + 0.5f);
         if (calculated < STAIRS)
         {
             return calculated;

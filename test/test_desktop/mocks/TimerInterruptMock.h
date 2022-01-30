@@ -1,7 +1,7 @@
 #pragma once
 
 #define CUSTOM_TIMER_INTERRUPT_IMPL
-#include "TimerInterrupt.h"
+#include "IntervalInterrupt.h"
 
 enum class Timer : int
 {
@@ -9,9 +9,9 @@ enum class Timer : int
 };
 
 template <Timer T>
-struct TimerInterruptMock
+struct IntervalInterruptMock
 {
-    using REAL_TYPE = TimerInterrupt<Timer::TIMER_TEST>;
+    using REAL_TYPE = IntervalInterrupt<Timer::TIMER_TEST>;
 
     static bool initialized;
     static bool running;
@@ -40,52 +40,52 @@ struct TimerInterruptMock
 };
 
 template <Timer T>
-bool TimerInterruptMock<T>::running = false;
+bool IntervalInterruptMock<T>::running = false;
 
 template <Timer T>
-bool TimerInterruptMock<T>::initialized = false;
+bool IntervalInterruptMock<T>::initialized = false;
 
 template <Timer T>
-timer_callback TimerInterruptMock<T>::callback = nullptr;
+timer_callback IntervalInterruptMock<T>::callback = nullptr;
 
 template <Timer T>
-const unsigned long int TimerInterrupt<T>::FREQ = F_CPU;
+const unsigned long int IntervalInterrupt<T>::FREQ = F_CPU;
 
 template <Timer T>
-uint32_t TimerInterruptMock<T>::max_interval = 0;
+uint32_t IntervalInterruptMock<T>::max_interval = 0;
 
 template <Timer T>
-uint32_t TimerInterruptMock<T>::min_interval = UINT32_MAX;
+uint32_t IntervalInterruptMock<T>::min_interval = UINT32_MAX;
 
 template <Timer T>
-void TimerInterrupt<T>::init()
+void IntervalInterrupt<T>::init()
 {
-    TimerInterruptMock<T>::initialized = true;
+    IntervalInterruptMock<T>::initialized = true;
 }
 
 template <Timer T>
-void TimerInterrupt<T>::setCallback(timer_callback fn)
+void IntervalInterrupt<T>::setCallback(timer_callback fn)
 {
-    TimerInterruptMock<T>::callback = fn;
+    IntervalInterruptMock<T>::callback = fn;
 }
 
 template <Timer T>
-void TimerInterrupt<T>::setInterval(uint32_t value)
+void IntervalInterrupt<T>::setInterval(uint32_t value)
 {
-    TimerInterruptMock<T>::running = true;
+    IntervalInterruptMock<T>::running = true;
 
-    if (value > TimerInterruptMock<T>::max_interval)
+    if (value > IntervalInterruptMock<T>::max_interval)
     {
-        TimerInterruptMock<T>::max_interval = value;
+        IntervalInterruptMock<T>::max_interval = value;
     }
-    else if (value < TimerInterruptMock<T>::min_interval)
+    else if (value < IntervalInterruptMock<T>::min_interval)
     {
-        TimerInterruptMock<T>::min_interval = value;
+        IntervalInterruptMock<T>::min_interval = value;
     }
 }
 
 template <Timer T>
-void TimerInterrupt<T>::stop()
+void IntervalInterrupt<T>::stop()
 {
-    TimerInterruptMock<T>::running = false;
+    IntervalInterruptMock<T>::running = false;
 }

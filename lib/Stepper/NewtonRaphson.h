@@ -9,7 +9,7 @@ private:
     {
         return curr == prev
                    ? curr
-                   : sqrt(x, 0.5 * (curr + x / curr), curr);
+                   : sqrt(x, 0.5f * (curr + x / curr), curr);
     }
 
 public:

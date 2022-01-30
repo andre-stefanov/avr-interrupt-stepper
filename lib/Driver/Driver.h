@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR = false>
 class Driver
 {
 private:
@@ -18,22 +18,36 @@ public:
 
 #ifndef DRIVER_CUSTOM_IMPL
 
-template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
-inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR>::step()
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR>
+inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR, T_INVERT_DIR>::step()
 {
     T_PIN_STEP::pulse();
 }
 
-template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR>
-inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR>::dir(bool cw)
+template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR>
+inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR, T_INVERT_DIR>::dir(bool cw)
 {
-    if (cw)
+    if (T_INVERT_DIR)
     {
-        T_PIN_DIR::high();
+        if (cw)
+        {
+            T_PIN_DIR::high();
+        }
+        else
+        {
+            T_PIN_DIR::low();
+        }
     }
     else
     {
-        T_PIN_DIR::low();
+        if (cw)
+        {
+            T_PIN_DIR::low();
+        }
+        else
+        {
+            T_PIN_DIR::high();
+        }
     }
 }
 

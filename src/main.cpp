@@ -2,13 +2,14 @@
 
 #include "Pin.h"
 #include "Driver.h"
-#include "TimerInterrupt.h"
+#include "IntervalInterrupt.h"
 #include "Stepper.h"
 #include "Angle.h"
 
 #include <limits.h>
 
 constexpr auto SIDEREAL = 86164.0905f;
+
 namespace axis
 {
   namespace ra
@@ -22,11 +23,14 @@ namespace axis
 
     using pinStep = Pin<46>;
     using pinDir = Pin<47>;
-    using interrupt = TimerInterrupt<Timer::TIMER_1>;
+    using interrupt = IntervalInterrupt<Timer::TIMER_1>;
     using driver = Driver<SPR, pinStep, pinDir>;
     using stepper = Stepper<interrupt, driver, SLEWING_SPEED.mrad_u32(), 4 * SLEWING_SPEED.mrad_u32()>;
   }
 }
+
+ISR(TIMER1_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_1>::handle_overflow(); }
+ISR(TIMER1_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_1>::handle_compare_match(); }
 
 using namespace axis::ra;
 
@@ -81,27 +85,27 @@ void setup()
 
 void loop()
 {
-  // stepper::move(SLEWING_SPEED / 2, Angle::deg(90.0f));
-  // delay(500);
-  // stepper::move(SLEWING_SPEED, Angle::deg(45.0f));
-  // do
-  // {
-  //   // nothing
-  // } while (true);
-
+  stepper::moveBy(SLEWING_SPEED / 2, Angle::deg(90.0f));
+  delay(500);
+  stepper::moveBy(SLEWING_SPEED, Angle::deg(45.0f));
   do
   {
-    Pin<DEBUG_LOOP_TIMING_PIN>::high();
-    if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start)
-    {
-      // Serial.print("Starting movement ");
-      // Serial.println(started);
-      // stepper::move(specs[started], onComplete);
-      stepper::move(specs[started], StepperCallback::create<onComplete>());
-      started++;
-    }
-    Pin<DEBUG_LOOP_TIMING_PIN>::low();
-  } while (1);
+    // nothing
+  } while (true);
+
+  // do
+  // {
+  //   Pin<DEBUG_LOOP_TIMING_PIN>::high();
+  //   if (started < (sizeof specs / sizeof specs[0]) && completed == started && millis() > next_start)
+  //   {
+  //     // Serial.print("Starting movement ");
+  //     // Serial.println(started);
+  //     // stepper::move(specs[started], onComplete);
+  //     stepper::move(specs[started], StepperCallback::create<onComplete>());
+  //     started++;
+  //   }
+  //   Pin<DEBUG_LOOP_TIMING_PIN>::low();
+  // } while (1);
 }
 
 #else
@@ -127,13 +131,13 @@ void dump_snapshot()
 int main(int argc, char const *argv[])
 {
   uint32_t interval = UINT32_MAX;
-  TimerInterrupt_Delegate<Timer::TIMER_3>::setInterval = [&interval](uint32_t i)
+  IntervalInterrupt_Delegate<Timer::TIMER_3>::setInterval = [&interval](uint32_t i)
   { interval = i; };
-  TimerInterrupt_Delegate<Timer::TIMER_3>::stop = [&interval]()
+  IntervalInterrupt_Delegate<Timer::TIMER_3>::stop = [&interval]()
   { interval = UINT32_MAX; };
 
   timer_callback callback = nullptr;
-  TimerInterrupt_Delegate<Timer::TIMER_3>::setCallback = [&callback](timer_callback fn)
+  IntervalInterrupt_Delegate<Timer::TIMER_3>::setCallback = [&callback](timer_callback fn)
   { callback = fn; };
 
   while (true)

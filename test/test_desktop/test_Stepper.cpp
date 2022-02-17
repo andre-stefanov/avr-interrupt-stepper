@@ -32,11 +32,17 @@ void move_and_assert_steps(Angle speed, Angle distance)
     int32_t start_position = mocks::driver::position;
     int32_t steps = mocks::driver::REAL_TYPE::SPR / 360.0f * distance.deg();
 
-    stepper::move(speed, distance);
+    stepper::moveBy(speed, distance);
 
     mocks::timer_interrupt::run_until_stopped();
 
+    // check for correct amount of steps
     TEST_ASSERT_EQUAL_INT64(steps + start_position, mocks::driver::position);
+
+    // check for correct direction
+    // bool expected_dir = (speed.rad() / abs(speed.rad())) == (distance.rad() / abs(distance.rad()));
+    // TEST_ASSERT_EQUAL(expected_dir, expected_dir);
+    // TEST_ASSERT_EQUAL(expected_dir, mocks::driver::cw);
 }
 
 void test_move_full_ramp()

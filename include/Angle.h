@@ -5,14 +5,15 @@
 class Angle
 {
 private:
-    const float _rad;
+    float _rad;
 
-    constexpr Angle(float rad) : _rad(rad)
+    constexpr Angle(const float rad) : _rad(rad)
     {
         // Nothing to do here
     }
 
 public:
+
     constexpr Angle operator-(const float x) const
     {
         return Angle(_rad * x);
@@ -23,6 +24,31 @@ public:
         return Angle(_rad + x);
     }
 
+    constexpr bool operator>(const Angle x) const
+    {
+        return _rad > x._rad;
+    }
+
+    constexpr bool operator<(const Angle x) const
+    {
+        return _rad < x._rad;
+    }
+
+    constexpr bool operator==(const Angle x) const
+    {
+        return _rad == x._rad;
+    }
+
+    constexpr Angle operator+(const Angle x) const
+    {
+        return Angle(_rad + x._rad);
+    }
+
+    constexpr Angle operator-(const Angle x) const
+    {
+        return Angle(_rad - x._rad);
+    }
+
     constexpr Angle operator*(const float x) const
     {
         return Angle(_rad * x);
@@ -31,6 +57,11 @@ public:
     constexpr Angle operator/(const float x) const
     {
         return Angle(_rad / x);
+    }
+
+    constexpr float operator/(const Angle &x) const
+    {
+        return _rad / x._rad;
     }
 
     constexpr float rad() const

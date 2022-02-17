@@ -24,6 +24,8 @@ private:
 #include "Pin_AVR.h"
 #elif defined(ARDUINO)
 #include "Pin_Arduino.h"
+#else
+#include "Pin_Delegate.h"
 #endif
 
 #endif // PIN_CUSTOM_IMPL

@@ -1,6 +1,6 @@
 #pragma once
 
-#define PROFILE_STEPPER 1
+#define PROFILE_STEPPER 0
 #if PROFILE_STEPPER && defined(ARDUINO)
 #include "Pin.h"
 #define PROFILE_MOVE_BEGIN() Pin<45>::high()
@@ -18,8 +18,6 @@
 
 #define RAMP_STAIRS 64
 
-#define SIGN(x) ((x < 0) ? 1 : 0)
-
 using StepperCallback = etl::delegate<void()>;
 
 /**
@@ -36,14 +34,16 @@ class Stepper
 public:
     using Ramp = AccelerationRamp<RAMP_STAIRS, INTERRUPT::FREQ, DRIVER::SPR, MAX_SPEED_mRAD, ACCELERATION_mRAD>;
 
+    static constexpr Angle ANGLE_PER_STEP = Angle::deg(360.0f) * DRIVER::SPR;
+
 private:
     static volatile int32_t pos;
 
-    static volatile bool dir;
+    static volatile int8_t dir;
     static volatile uint8_t ramp_stair;
     static volatile uint8_t ramp_stair_step;
 
-    static uint32_t run_interval;
+    static volatile uint32_t run_interval;
 
     static volatile uint8_t pre_decel_stairs_left;
     static volatile uint16_t accel_steps_left;
@@ -56,23 +56,16 @@ private:
      */
     Stepper() = delete;
 
-    static inline void step()
+    static inline __attribute__((always_inline)) void step()
     {
         DRIVER::step();
-        if (dir)
-        {
-            pos++;
-        }
-        else
-        {
-            pos--;
-        }
+        pos += dir;
     }
 
     /**
      * @brief Stop movement immediately and invoke onComplete interval if set.
      */
-    static inline void terminate()
+    static void terminate()
     {
         INTERRUPT::stop();
         INTERRUPT::setCallback(nullptr);
@@ -88,44 +81,53 @@ private:
     }
 
     static void start_movement(
-        const bool direction,
+        const int8_t direction,
         const uint8_t pre_decel_stairs,
         const uint16_t accel_steps,
         const uint32_t run_steps,
-        const uint32_t run_interval)
+        const uint32_t new_run_interval)
     {
-        using Class = Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>;
+        pre_decel_stairs_left = pre_decel_stairs;
+        accel_steps_left = accel_steps;
+        run_steps_left = run_steps;
+        run_interval = new_run_interval;
 
-        Class::pre_decel_stairs_left = pre_decel_stairs;
-        Class::accel_steps_left = accel_steps;
-        Class::run_steps_left = run_steps;
-        Class::run_interval = run_interval;
+        if (direction > 0)
+        {
+            Pin<47>::init();
+            Pin<47>::pulse();
+        }
+        else
+        {
+            Pin<45>::init();
+            Pin<45>::pulse();
+        }
 
-        // we need to pre-decelerate first (direction change or lower speed)
+        // we need to pre-decelerate first (for direction change or lower speed)
         if (pre_decel_stairs > 0)
         {
-            Class::ramp_stair_step = Ramp::LAST_STEP;
-            INTERRUPT::setInterval(Ramp::intervals[Class::ramp_stair]);
+            ramp_stair_step = Ramp::LAST_STEP;
+            INTERRUPT::setInterval(Ramp::intervals[ramp_stair]);
             INTERRUPT::setCallback(pre_decelerate_handler);
         }
-        // accelerate (faster speed)
+        // accelerate (for faster speed)
         else if (accel_steps > 0)
         {
             if (ramp_stair == 0)
             {
                 ramp_stair = 1;
             }
-            Class::dir = direction;
-            DRIVER::dir(dir);
-            INTERRUPT::setInterval(Ramp::intervals[Class::ramp_stair]);
+            dir = direction;
+            DRIVER::dir(dir > 0);
+            INTERRUPT::setInterval(Ramp::intervals[ramp_stair]);
             INTERRUPT::setCallback(accelerate_handler);
         }
         // run directly, requested speed is similar to current one
         else if (run_steps > 0)
         {
-            Class::dir = direction;
-            DRIVER::dir(dir);
-            INTERRUPT::setInterval(run_interval);
+            dir = direction;
+            DRIVER::dir(dir > 0);
+            INTERRUPT::setInterval(new_run_interval);
             INTERRUPT::setCallback(run_handler);
         }
         // decelerate until stopped
@@ -158,8 +160,8 @@ private:
         // pre-deceleration finished, it was a direction switch, accelerate
         else if (accel_steps_left > 0)
         {
-            dir = !dir;
-            DRIVER::dir(dir);
+            dir = dir * (-1);
+            DRIVER::dir(dir > 0);
             ramp_stair = 0;
             ramp_stair_step = 0;
             INTERRUPT::setInterval(Ramp::intervals[0]);
@@ -168,7 +170,7 @@ private:
         // pre-deceleration finished, no need to accelerate
         else
         {
-            DRIVER::dir(dir);
+            DRIVER::dir(dir > 0);
             INTERRUPT::setInterval(run_interval);
             INTERRUPT::setCallback(run_handler);
         }
@@ -251,14 +253,16 @@ private:
     }
 
 public:
-    int32_t position()
+    static int32_t position()
     {
         return pos;
     }
 
-    void position(int32_t value)
+    static void position(Angle value)
     {
-        pos = value;
+        // noInterrupts();
+        pos = static_cast<int32_t>((DRIVER::SPR / (2.0f * 3.14159265358979323846f)) * value.rad() + 0.5f);
+        // interrupts();
     }
 
     bool isRunning()
@@ -268,32 +272,54 @@ public:
 
     struct MovementSpec
     {
-        const bool dir;
+        const int8_t dir;
         const uint32_t steps;
         const uint32_t run_interval;
         const uint8_t full_accel_stairs;
 
+        constexpr MovementSpec(
+            const int8_t dir,
+            const uint32_t steps,
+            const uint32_t run_interval,
+            const uint8_t full_accel_stairs)
+            : dir(dir),
+              steps(steps),
+              run_interval(run_interval),
+              full_accel_stairs(full_accel_stairs) {}
+
         constexpr MovementSpec(const Angle speed, const Angle distance)
-            : dir(SIGN(speed.rad()) == SIGN(distance.rad())),
-              steps(abs(distance.rad()) / (2.0f * 3.14159265358979323846f / DRIVER::SPR) + 0.5f),
-              run_interval(Ramp::getIntervalForSpeed(abs(speed.rad()))),
-              full_accel_stairs(Ramp::maxAccelStairs(abs(speed.rad())))
+            : MovementSpec(
+                  (distance.mrad() > 0.0f) ? speed : -speed,
+                  abs(distance.rad()) / (2.0f * 3.14159265358979323846f / DRIVER::SPR) + 0.5f)
         {
             // nothing to do here, all values have been initialized
         }
 
         constexpr MovementSpec(const Angle speed, const uint32_t steps)
-            : dir(speed.rad() > 0),
+            : dir((speed.rad() > 0.0f) ? 1 : -1),
               steps(steps),
-              run_interval(Ramp::getIntervalForSpeed(abs(speed.rad()))),
-              full_accel_stairs(Ramp::maxAccelStairs(abs(speed.rad())))
+              run_interval(Ramp::getIntervalForSpeed(speed.rad())),
+              full_accel_stairs(Ramp::maxAccelStairs(speed.rad()))
         {
             // nothing to do here, all values have been initialized
         }
+
+        constexpr static MovementSpec time(const Angle speed, const uint32_t time_ms)
+        {
+            int8_t dir = speed.rad() >= 0.0f;
+            uint32_t steps = static_cast<uint32_t>(abs(speed.rad()) / (STEP_ANGLE.rad() * 1000.0f) * time_ms);
+            uint32_t run_interval = Ramp::getIntervalForSpeed(speed.rad());
+            uint8_t full_accel_stairs = Ramp::maxAccelStairs(speed.rad());
+            return MovementSpec(dir, steps, run_interval, full_accel_stairs);
+        }
+
+    private:
+        constexpr static Angle STEP_ANGLE = Angle::deg(360.0f) / DRIVER::SPR;
     };
 
-    static void stop()
+    static void stop(StepperCallback onComplete = StepperCallback())
     {
+        cb_complete = onComplete;
         if (ramp_stair > 0)
         {
             start_movement(dir, 0, 0, 0, UINT32_MAX);
@@ -306,17 +332,17 @@ public:
 
     static void moveTime(const Angle speed, const uint32_t time_ms, StepperCallback onComplete = StepperCallback())
     {
-        move(MovementSpec(speed, speed / 1000.0f * time_ms), onComplete);
+        move(MovementSpec::time(speed, time_ms), onComplete);
     }
 
-    static void moveTo(const Angle speed, const Angle position, StepperCallback onComplete = StepperCallback())
+    static void moveTo(const Angle speed, const Angle target, StepperCallback onComplete = StepperCallback())
     {
-        move(MovementSpec(speed, Angle::deg(360.0f / DRIVER::SPR) * pos - position), onComplete);
+        move(MovementSpec(speed, target - (Angle::deg(360.0f / DRIVER::SPR) * pos)), onComplete);
     }
 
-    static void moveTo(const Angle speed, const int32_t position, StepperCallback onComplete = StepperCallback())
+    static void moveTo(const Angle speed, const int32_t target, StepperCallback onComplete = StepperCallback())
     {
-        move(MovementSpec(speed, pos - position), onComplete);
+        move(MovementSpec(speed, target - pos), onComplete);
     }
 
     static void moveBy(const Angle speed, const Angle distance, StepperCallback onComplete = StepperCallback())
@@ -329,14 +355,15 @@ public:
         move(MovementSpec(speed, steps), onComplete);
     }
 
-    static void move(const Angle speed, StepperCallback onComplete = StepperCallback())
-    {
-        moveBy(speed, UINT32_MAX, onComplete);
-    }
-
     static void move(MovementSpec spec, StepperCallback onComplete = StepperCallback())
     {
         PROFILE_MOVE_BEGIN();
+
+#ifdef noInterrupts
+        noInterrupts();
+#endif
+
+        INTERRUPT::stop();
 
         cb_complete = onComplete;
 
@@ -424,7 +451,7 @@ public:
             // steps needed for acceleration between current and requested speed
             const uint16_t accel_steps = total_decel_steps - immediate_decel_steps;
 
-            // not enough steps to even immediately decelerate, need to compensate
+            // not enough steps to even immediately decelerate, need to compensate backwards
             if (spec.steps < immediate_decel_steps)
             {
                 // first decelerate to complete stop
@@ -473,6 +500,9 @@ public:
 
         start_movement(spec.dir, mv_pre_decel_stairs, mv_accel_steps, mv_run_steps, mv_run_interval);
 
+#ifdef interrupts
+        interrupts();
+#endif
         PROFILE_MOVE_END();
     }
 };
@@ -481,7 +511,7 @@ template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t
 int32_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::pos = 0;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
-bool volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::dir = true;
+int8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::dir = 1;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::ramp_stair = 0;
@@ -490,7 +520,7 @@ template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t
 uint8_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::ramp_stair_step = 0;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
-uint32_t Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::run_interval = UINT32_MAX;
+uint32_t volatile Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::run_interval = UINT32_MAX;
 
 template <typename INTERRUPT, typename DRIVER, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 StepperCallback Stepper<INTERRUPT, DRIVER, MAX_SPEED_mRAD, ACCELERATION_mRAD>::cb_complete = StepperCallback();

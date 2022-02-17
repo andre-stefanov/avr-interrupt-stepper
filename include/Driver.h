@@ -11,6 +11,12 @@ private:
 public:
     constexpr static auto SPR = T_SPR;
 
+    static void init()
+    {
+        T_PIN_STEP::init();
+        T_PIN_DIR::init();
+    }
+
     static inline __attribute__((always_inline)) void step();
 
     static inline __attribute__((always_inline)) void dir(bool cw);

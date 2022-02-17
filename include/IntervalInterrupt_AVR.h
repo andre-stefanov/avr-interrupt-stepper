@@ -14,6 +14,16 @@
 #define INTERRUPT_TIMING_END()
 #endif
 
+#define DEBUG_INTERRUPT_SET_INTERVAL_PIN 37
+#if DEBUG_INTERRUPT_SET_INTERVAL_PIN != 0 && UNIT_TEST != 1
+#include <Pin.h>
+#define SET_INTERVAL_TIMING_START() Pin<DEBUG_INTERRUPT_SET_INTERVAL_PIN>::high()
+#define SET_INTERVAL_TIMING_END() Pin<DEBUG_INTERRUPT_SET_INTERVAL_PIN>::low()
+#else
+#define SET_INTERVAL_TIMING_START()
+#define SET_INTERVAL_TIMING_END()
+#endif
+
 /**
  * @brief Enumeration of 16 bit timers on atmega2560
  */
@@ -89,17 +99,25 @@ struct IntervalInterrupt_AVR
 template <Timer T>
 void IntervalInterrupt<T>::init()
 {
-    cli();                                      // disable interrupts
+#if DEBUG_INTERRUPT_SET_INTERVAL_PIN
+    Pin<DEBUG_INTERRUPT_SET_INTERVAL_PIN>::init();
+#endif
+#if DEBUG_INTERRUPT_TIMING_PIN
+    Pin<DEBUG_INTERRUPT_TIMING_PIN>::init();
+#endif
+    cli();                                         // disable interrupts
     *IntervalInterrupt_AVR<T>::_tccra = 0;         // reset timer/counter control register A
     *IntervalInterrupt_AVR<T>::_tccrb = 0;         // set prescaler to 0 (disable this interrupt)
     *IntervalInterrupt_AVR<T>::_tcnt = 0;          // reset counter
     *IntervalInterrupt_AVR<T>::_timsk |= (1 << 0); // enable interrupt on counter overflow
-    sei();                                      // reenable interrupts
+    sei();                                         // reenable interrupts
 }
 
 template <Timer T>
 inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uint32_t value)
 {
+    SET_INTERVAL_TIMING_START();
+
     // lower 16 bit of value will be used for compare match. thus we are only interested
     // in higher 16 bit for amount of overflows
     IntervalInterrupt_AVR<T>::ovf_cnt = (value >> 16);
@@ -110,10 +128,8 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uin
     if (IntervalInterrupt_AVR<T>::ovf_cnt == 0)
     {
         // if we don't need any overflow (high frequency), we have to enable compare interrupt now
-        cli();
         *IntervalInterrupt_AVR<T>::_timsk |= (1 << 1); // enable interrupt on counter value compare match
         *IntervalInterrupt_AVR<T>::_tccrb |= (1 << 3); // enable CTC mode (clear timer on compare)
-        sei();
     }
     else
     {
@@ -124,7 +140,7 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uin
     // set prescaler to 1 (count at MCU frequency)
     *IntervalInterrupt_AVR<T>::_tccrb |= 1;
 
-    Pin<37>::pulse();
+    SET_INTERVAL_TIMING_END();
 }
 
 template <Timer T>
@@ -145,111 +161,111 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::stop()
     Pin<37>::pulse();
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint8_t *TCCRA()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &TCCR1A;
-        case Timer::TIMER_3:
-            return &TCCR3A;
-        case Timer::TIMER_4:
-            return &TCCR4A;
-        case Timer::TIMER_5:
-            return &TCCR5A;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &TCCR1A;
+    case Timer::TIMER_3:
+        return &TCCR3A;
+    case Timer::TIMER_4:
+        return &TCCR4A;
+    case Timer::TIMER_5:
+        return &TCCR5A;
+    default:
+        return 0;
     }
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint8_t *TCCRB()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &TCCR1B;
-        case Timer::TIMER_3:
-            return &TCCR3B;
-        case Timer::TIMER_4:
-            return &TCCR4B;
-        case Timer::TIMER_5:
-            return &TCCR5B;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &TCCR1B;
+    case Timer::TIMER_3:
+        return &TCCR3B;
+    case Timer::TIMER_4:
+        return &TCCR4B;
+    case Timer::TIMER_5:
+        return &TCCR5B;
+    default:
+        return 0;
     }
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint8_t *TIMSK()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &TIMSK1;
-        case Timer::TIMER_3:
-            return &TIMSK3;
-        case Timer::TIMER_4:
-            return &TIMSK4;
-        case Timer::TIMER_5:
-            return &TIMSK5;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &TIMSK1;
+    case Timer::TIMER_3:
+        return &TIMSK3;
+    case Timer::TIMER_4:
+        return &TIMSK4;
+    case Timer::TIMER_5:
+        return &TIMSK5;
+    default:
+        return 0;
     }
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint8_t *TIFR()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &TIFR1;
-        case Timer::TIMER_3:
-            return &TIFR3;
-        case Timer::TIMER_4:
-            return &TIFR4;
-        case Timer::TIMER_5:
-            return &TIFR5;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &TIFR1;
+    case Timer::TIMER_3:
+        return &TIFR3;
+    case Timer::TIMER_4:
+        return &TIFR4;
+    case Timer::TIMER_5:
+        return &TIFR5;
+    default:
+        return 0;
     }
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint16_t *OCRA()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &OCR1A;
-        case Timer::TIMER_3:
-            return &OCR3A;
-        case Timer::TIMER_4:
-            return &OCR4A;
-        case Timer::TIMER_5:
-            return &OCR5A;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &OCR1A;
+    case Timer::TIMER_3:
+        return &OCR3A;
+    case Timer::TIMER_4:
+        return &OCR4A;
+    case Timer::TIMER_5:
+        return &OCR5A;
+    default:
+        return 0;
     }
 }
 
-template<Timer timer>
+template <Timer timer>
 constexpr volatile uint16_t *TCNT()
 {
     switch (timer)
     {
-        case Timer::TIMER_1:
-            return &TCNT1;
-        case Timer::TIMER_3:
-            return &TCNT3;
-        case Timer::TIMER_4:
-            return &TCNT4;
-        case Timer::TIMER_5:
-            return &TCNT5;
-        default:
-            return 0;
+    case Timer::TIMER_1:
+        return &TCNT1;
+    case Timer::TIMER_3:
+        return &TCNT3;
+    case Timer::TIMER_4:
+        return &TCNT4;
+    case Timer::TIMER_5:
+        return &TCNT5;
+    default:
+        return 0;
     }
 }
 

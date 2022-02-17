@@ -1,0 +1,23 @@
+{
+    "name": "InterruptStepper",
+    "version": "0.0.1",
+    "dependencies": {
+        "etlcpp/Embedded Template Library": "19.3.5"
+    },
+    "authors": {
+        "name": "Andre Stefanov",
+        "email": "mail@andrestefanov.de",
+        "maintainer": true
+    },
+    "frameworks": "arduino",
+    "platforms": "atmelavr",
+    "build": {
+        "unflags": [
+            "-std=gnu++11"
+        ],
+        "flags": [
+            "-std=c++17",
+            "-DETL_NO_STL"
+        ]
+    }
+}

@@ -28,6 +28,8 @@ public:
 
 #if defined(ARDUINO_ARCH_AVR)
 #include "IntervalInterrupt_AVR.h"
+#elif defined(ARDUINO_ARCH_STM32)
+#include "IntervalInterrupt_STM32.h"
 #else
 #include "IntervalInterrupt_Delegate.h"
 #endif

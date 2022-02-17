@@ -33,7 +33,7 @@ template <uint8_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD
 class AccelerationRamp
 {
     template <typename T>
-    constexpr static inline bool is_pow2(const T value)
+    constexpr static inline __attribute__((always_inline)) bool is_pow2(const T value)
     {
         return (value & (value - 1)) == 0;
     }
@@ -121,21 +121,20 @@ public:
     constexpr static Intervals<uint32_t, STAIRS> intervals = calculateIntervals();
     static_assert(intervals[0] > 0);
 
-    static constexpr inline uint32_t getIntervalForSpeed(float radPerSec)
+    static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(float radPerSec)
     {
-        return (uint32_t)(T_FREQ * STEP_ANGLE / radPerSec + 0.5f);
+        return (uint32_t)(T_FREQ * STEP_ANGLE / abs(radPerSec) + 0.5f);
     }
 
-    static constexpr inline uint8_t maxAccelStairs(float radPerSec)
+    static constexpr inline __attribute__((always_inline)) uint8_t maxAccelStairs(float radPerSec)
     {
-        uint8_t calculated = (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD) + 0.5f);
-        if (calculated < STAIRS)
+        if (abs(radPerSec) >= MAX_SPEED_RAD)
         {
-            return calculated;
+            return STAIRS - 1;
         }
         else
         {
-            return STAIRS - 1;
+            return (uint8_t)((radPerSec * radPerSec) / (2 * STEP_ANGLE * UTIL_ACCELERATION_RAD) + 0.5f);
         }
     }
 };

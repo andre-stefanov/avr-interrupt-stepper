@@ -1,9 +1,12 @@
-void test_AccelerationRamp();
-void test_Stepper();
+#include "gtest/gtest.h"
 
-int main(int argc, char const *argv[])
+// void test_AccelerationRamp();
+// void test_Stepper();
+
+int main(int argc, char *argv[])
 {
-    test_AccelerationRamp();
-    test_Stepper();
-    return 0;
+    // test_AccelerationRamp();
+    // test_Stepper();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

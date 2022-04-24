@@ -16,7 +16,8 @@ using pin_dir = Pin<1>;
 
 using interrupt = IntervalInterrupt<Timer::TIMER_1>;
 using driver = Driver<SPR, pin_step, pin_dir, false>;
-using stepper = Stepper<interrupt, driver, MAX_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
+using ramp = AccelerationRamp<128, F_CPU, SPR, MAX_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
+using stepper = Stepper<interrupt, driver, ramp>;
 
 bool finished = false;
 

@@ -47,9 +47,10 @@ namespace config
         using pin_step = Pin<PIN_RA_STEP>;
         using pin_dir = Pin<PIN_RA_DIR>;
 
-        using interrupt = IntervalInterrupt<Timer::TIMER_16>;
+        using interrupt = IntervalInterrupt<Timer::TIMER_1>;
         using driver = Driver<SPR, pin_step, pin_dir, RA_DRIVER_INVERT_STEP>;
-        using stepper = Stepper<interrupt, driver, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using ramp = AccelerationRamp<64, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using stepper = Stepper<interrupt, driver, ramp>;
     };
 
     struct Dec
@@ -70,8 +71,9 @@ namespace config
         using pin_step = Pin<PIN_RA_STEP>;
         using pin_dir = Pin<PIN_RA_DIR>;
 
-        using interrupt = IntervalInterrupt<Timer::TIMER_17>;
+        using interrupt = IntervalInterrupt<TIMER_DEC>;
         using driver = Driver<SPR, Pin<PIN_DEC_STEP>, Pin<PIN_DEC_DIR>, DEC_DRIVER_INVERT_STEP>;
-        using stepper = Stepper<interrupt, driver, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using ramp = AccelerationRamp<64, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using stepper = Stepper<interrupt, driver, ramp>;
     };
 }

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
-#define DEBUG_INTERRUPT_TIMING_PIN 39
+#define DEBUG_INTERRUPT_TIMING_PIN 0
 #if DEBUG_INTERRUPT_TIMING_PIN != 0 && UNIT_TEST != 1
 #include <Pin.h>
 #define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
@@ -14,7 +14,7 @@
 #define INTERRUPT_TIMING_END()
 #endif
 
-#define DEBUG_INTERRUPT_SET_INTERVAL_PIN 37
+#define DEBUG_INTERRUPT_SET_INTERVAL_PIN 0
 #if DEBUG_INTERRUPT_SET_INTERVAL_PIN != 0 && UNIT_TEST != 1
 #include <Pin.h>
 #define SET_INTERVAL_TIMING_START() Pin<DEBUG_INTERRUPT_SET_INTERVAL_PIN>::high()
@@ -99,10 +99,10 @@ struct IntervalInterrupt_AVR
 template <Timer T>
 void IntervalInterrupt<T>::init()
 {
-#if DEBUG_INTERRUPT_SET_INTERVAL_PIN
+#if DEBUG_INTERRUPT_SET_INTERVAL_PIN != 0
     Pin<DEBUG_INTERRUPT_SET_INTERVAL_PIN>::init();
 #endif
-#if DEBUG_INTERRUPT_TIMING_PIN
+#if DEBUG_INTERRUPT_TIMING_PIN != 0
     Pin<DEBUG_INTERRUPT_TIMING_PIN>::init();
 #endif
     cli();                                         // disable interrupts
@@ -157,8 +157,6 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::stop()
 
     // set counter to 0
     *IntervalInterrupt_AVR<T>::_tcnt = 0;
-
-    Pin<37>::pulse();
 }
 
 template <Timer timer>
@@ -295,9 +293,6 @@ volatile uint16_t *const IntervalInterrupt_AVR<T>::_ocra = OCRA<T>();
 
 template <Timer T>
 volatile timer_callback IntervalInterrupt_AVR<T>::callback = nullptr;
-
-// ISR(TIMER1_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_1>::handle_overflow(); }
-// ISR(TIMER1_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_1>::handle_compare_match(); }
 
 template <Timer T>
 const unsigned long int IntervalInterrupt<T>::FREQ = F_CPU;

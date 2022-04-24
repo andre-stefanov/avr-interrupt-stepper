@@ -11,7 +11,27 @@ private:
 
     static void returnTracking()
     {
-        track(true);
+        is_slewing = false;
+        track(is_tracking);
+    }
+
+    static void returnTrackingFromGuide()
+    {
+        is_guiding = false;
+        track(is_tracking);
+        if (_posGuiding)
+        {
+            _posGuidingTime += _requestedGuideDuration;
+        }
+        else
+        {
+            _negGuidingTime += _requestedGuideDuration;
+        }
+    }
+
+    static void returnMarkSlewEnded()
+    {
+        is_slewing = false;
     }
 
     constexpr static inline Angle transmit(const Angle from)
@@ -38,101 +58,238 @@ public:
 
     static void track(bool enable)
     {
-        if (enable)
+        unsigned long timestamp = millis();
+
+        if (STEPPER_SPEED_TRACKING.deg() != 0.0f)
         {
-            Config::stepper::moveTo(STEPPER_SPEED_TRACKING, stepper_limit_max);
+            if (_recentTrackingStartTime != 0UL)
+            {
+                _totalTrackingTime += timestamp - _recentTrackingStartTime;
+            }
+
+            if (enable)
+            {
+                Config::stepper::moveTo(STEPPER_SPEED_TRACKING, transmit(limit_max));
+                _recentTrackingStartTime = timestamp;
+            }
+            else
+            {
+                if (_recentTrackingStartTime > 0UL)
+                {
+                    _recentTrackingStartTime = 0UL;
+                }
+
+                Config::stepper::stop(StepperCallback());
+            }
+
+            is_tracking = enable;
         }
         else
         {
-            Config::stepper::stop();
         }
+    }
 
-        if (is_tracking != enable)
+    static void stopGuiding()
+    {
+        unsigned long guideDuration = millis() - _guideStartTime;
+        Config::stepper::stop(StepperCallback());
+        track(is_tracking);
+        is_guiding = false;
+        if (_posGuiding)
         {
-            is_tracking = enable;
+            _posGuidingTime += guideDuration;
+        }
+        else
+        {
+            _negGuidingTime += guideDuration;
         }
     }
 
     static void guide(bool direction, unsigned long time_ms)
     {
-        if (is_tracking)
-        {
-            auto speed = (direction) ? STEPPER_SPEED_GUIDING_POS : STEPPER_SPEED_GUIDING_NEG;
-            Config::stepper::moveTime(speed, time_ms, StepperCallback::create<returnTracking>());
-        }
+        auto speed = (direction) ? STEPPER_SPEED_GUIDING_POS : STEPPER_SPEED_GUIDING_NEG;
+        is_guiding = true;
+        _posGuiding = direction;
+        _guideStartTime = millis();
+        _requestedGuideDuration = time_ms;
+        Config::stepper::moveTime(speed, time_ms, StepperCallback::create<returnTrackingFromGuide>());
     }
 
     static void slewTo(Angle target)
     {
-        auto trans_target = transmit(target);
-        if (trans_target > stepper_limit_max)
-        {
-            trans_target = stepper_limit_max;
-        }
-        else if (trans_target < stepper_limit_min)
-        {
-            trans_target = stepper_limit_min;
-        }
+        slewBy(target - position());
+    }
 
-        if (is_tracking)
+    static void slewBy(const Angle distance)
+    {
+        if (distance.deg() != 0)
         {
-            Config::stepper::moveTo(STEPPER_SPEED_TRACKING + STEPPER_SPEED_SLEWING, trans_target, StepperCallback::create<returnTracking>());
-        }
-        else
-        {
-            Config::stepper::moveTo(STEPPER_SPEED_SLEWING, trans_target);
+            Angle slew_speed = STEPPER_SPEED_SLEWING * slew_rate_factor;
+
+            is_slewing = true;
+            if (is_tracking)
+            {
+                Angle move_speed = slew_speed + ((distance.rad() > 0.0f) ? STEPPER_SPEED_TRACKING : -STEPPER_SPEED_TRACKING);
+
+                Angle move_distance = distance * (move_speed / STEPPER_SPEED_SLEWING);
+
+                Config::stepper::moveBy(move_speed, transmit(move_distance), StepperCallback::create<returnTracking>());
+            }
+            else
+            {
+                Config::stepper::moveBy(slew_speed, transmit(distance), StepperCallback::create<returnMarkSlewEnded>());
+            }
         }
     }
 
-    static void slew(bool direcion)
+    static void slew(bool direction)
     {
-        auto speed = (direcion) ? STEPPER_SPEED_SLEWING : -STEPPER_SPEED_SLEWING;
+        auto target = (direction) ? limit_max : limit_min;
+        slewTo(target);
+    }
 
-        if (is_tracking)
+    static float slewingProgress()
+    {
+        if (is_slewing)
         {
-            speed = speed + STEPPER_SPEED_TRACKING;
+            return (position() - slewing_from) / (slewing_to - slewing_from);
         }
-
-        Config::stepper::moveTo(speed, (direcion) ? stepper_limit_max : stepper_limit_min);
+        else
+        {
+            return 1.0f;
+        }
     }
 
     static void stopSlewing()
     {
-        Config::stepper::stop(StepperCallback::create<returnTracking>());
+        if (is_tracking && TRACKING_SPEED.deg() > 0)
+        {
+            Config::stepper::stop(StepperCallback::create<returnTracking>());
+        }
+        else
+        {
+            Config::stepper::stop(StepperCallback::create<returnMarkSlewEnded>());
+        }
     }
 
     static void limitMax(Angle value)
     {
-        stepper_limit_max = transmit(value);
+        limit_max = value;
     }
 
     static void limitMin(Angle value)
     {
-        stepper_limit_min = transmit(value);
+        limit_min = value;
     }
 
+    // Overridden for RA in Mount.cpp
     static Angle position()
     {
-        return STEP_ANGLE * Config::stepper::position();
+        return Config::stepper::position() / Config::TRANSMISSION;
     }
 
-    static void position(Angle value)
+    // Overridden for RA in Mount.cpp
+    static void setPosition(Angle value)
     {
         Config::stepper::position(transmit(value));
     }
 
+    // Overridden for RA in Mount.cpp
+    static Angle trackingPosition()
+    {
+        return Angle::deg(0.0f);
+    }
+
+    // Overridden for RA in Mount.cpp
+    static unsigned long getTotalTrackingTime()
+    {
+        return 0UL;
+    }
+
+    static bool isRunning()
+    {
+        return is_slewing;
+    }
+
+    static bool isTracking()
+    {
+        return is_tracking;
+    }
+
+    static bool isGuiding()
+    {
+        return is_guiding;
+    }
+
+    static int8_t direction()
+    {
+        return Config::stepper::movementDir();
+    }
+
+    static void setSlewRate(float factor)
+    {
+        slew_rate_factor = factor;
+    }
+
+    static float slewRate()
+    {
+        return slew_rate_factor;
+    }
+
 private:
     static bool is_tracking;
+    static float slew_rate_factor;
+    static bool is_guiding;
 
-    static Angle stepper_limit_max;
-    static Angle stepper_limit_min;
+    static boolean is_slewing;
+    static Angle slewing_from;
+    static Angle slewing_to;
+
+    static Angle limit_max;
+    static Angle limit_min;
+    static unsigned long _recentTrackingStartTime;
+    static unsigned long _totalTrackingTime;
+    static unsigned long _posGuidingTime;
+    static unsigned long _negGuidingTime;
+    static unsigned long _guideStartTime;
+    static unsigned long _requestedGuideDuration;
+    static bool _posGuiding;
 };
 
 template <typename Config>
 bool Axis<Config>::is_tracking = false;
+template <typename Config>
+bool Axis<Config>::is_guiding = false;
+template <typename Config>
+bool Axis<Config>::is_slewing = false;
 
 template <typename Config>
-Angle Axis<Config>::stepper_limit_max = transmit(Angle::deg(180.0f));
+float Axis<Config>::slew_rate_factor = 1.0;
 
 template <typename Config>
-Angle Axis<Config>::stepper_limit_min = transmit(Angle::deg(-180.0f));
+Angle Axis<Config>::slewing_from = Angle::deg(0.0f);
+
+template <typename Config>
+Angle Axis<Config>::slewing_to = Angle::deg(0.0f);
+
+template <typename Config>
+Angle Axis<Config>::limit_max = Angle::deg(101.0f);
+
+template <typename Config>
+Angle Axis<Config>::limit_min = Angle::deg(-101.0f);
+
+template <typename Config>
+unsigned long Axis<Config>::_recentTrackingStartTime = 0UL;
+
+template <typename Config>
+unsigned long Axis<Config>::_totalTrackingTime = 0UL;
+template <typename Config>
+unsigned long Axis<Config>::_posGuidingTime = 0UL;
+template <typename Config>
+unsigned long Axis<Config>::_negGuidingTime = 0UL;
+template <typename Config>
+unsigned long Axis<Config>::_guideStartTime = 0UL;
+template <typename Config>
+unsigned long Axis<Config>::_requestedGuideDuration = 0UL;
+template <typename Config>
+bool Axis<Config>::_posGuiding = false;

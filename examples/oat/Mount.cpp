@@ -38,13 +38,17 @@ template <>
 Angle Mount::position<Mount::Ra>()
 {
     auto tracking_time = total_tracking_time + ((recent_tracking_start_time) ? millis() - recent_tracking_start_time : 0);
-    return Ra::position() - (Ra::TRACKING_SPEED * tracking_time);
+    return Ra::position() - (Ra::TRACKING_SPEED * tracking_time / 1000);
 }
 
 template <>
 void Mount::position<Mount::Ra>(Angle value)
 {
-    Mount::Ra::position(value);
+    Mount::Ra::setPosition(value);
     total_tracking_time = 0;
-    recent_tracking_start_time = millis();
+
+    if (recent_tracking_start_time)
+    {
+        recent_tracking_start_time = millis();
+    }
 }

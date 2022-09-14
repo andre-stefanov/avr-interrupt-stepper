@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gmock/gmock.h"
+#include <iostream>
 
 struct DriverMock
 {
@@ -17,6 +18,7 @@ struct MockedDriver
 
     static void step()
     {
+        std::cout << "step" << std::endl;
         mock->step();
     }
 

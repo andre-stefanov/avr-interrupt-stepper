@@ -23,8 +23,6 @@
 #include <stdint.h>
 #include "Angle.h"
 
-#define RAMP_STAIRS 64
-
 using StepperCallback = etl::delegate<void()>;
 
 /**
@@ -127,10 +125,16 @@ private:
             INTERRUPT::setInterval(new_run_interval);
         }
         // decelerate until stopped
-        else
+        else if (ramp_stair > 0)
         {
             INTERRUPT::setCallback(decelerate_handler);
             INTERRUPT::setInterval(RAMP::interval(ramp_stair));
+        }
+        // stop immediately
+        else
+        {
+            INTERRUPT::stop();
+            INTERRUPT::setCallback(nullptr);
         }
     }
 
@@ -208,7 +212,7 @@ private:
 
     static void run_handler()
     {
-        // always step first to ensure best accuracy.
+        // always step first to ensure the best accuracy.
         // other calculations should be done as quick as possible below.
         step();
 
@@ -379,7 +383,11 @@ public:
         uint32_t mv_run_steps = 0;
         uint32_t mv_run_interval = 0;
 
-        if (spec.dir != dir && ramp_stair > 0)
+        if (spec.steps == 0)
+        {
+            stop(onComplete);
+        }
+        else if (spec.dir != dir && ramp_stair > 0)
         {
             // decelerate until full stop to move in other direction
             mv_pre_decel_stairs = ramp_stair;
@@ -488,7 +496,14 @@ public:
                 if (spec.steps & 0x1)
                 {
                     mv_run_steps = 1;
-                    mv_run_interval = RAMP::interval(ramp_stair + (mv_accel_steps / RAMP::STEPS_PER_STAIR));
+                    if (spec.steps == 1)
+                    {
+                        mv_run_interval = RAMP::interval(RAMP::LAST_STEP);
+                    }
+                    else
+                    {
+                        mv_run_interval = RAMP::interval(ramp_stair + (mv_accel_steps / RAMP::STEPS_PER_STAIR));
+                    }
                 }
             }
             // enough steps for "full" ramp

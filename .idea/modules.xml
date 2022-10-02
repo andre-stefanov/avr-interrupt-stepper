@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/InterruptStepper.iml" filepath="$PROJECT_DIR$/.idea/InterruptStepper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/avr-interrupt-stepper.iml" filepath="$PROJECT_DIR$/.idea/avr-interrupt-stepper.iml" />
     </modules>
   </component>
 </project>

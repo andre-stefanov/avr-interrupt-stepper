@@ -5,10 +5,10 @@
 template <uint32_t T_SPR, typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR = false>
 class Driver
 {
-private:
-    Driver() = delete;
 
 public:
+    Driver() = delete;
+
     constexpr static auto SPR = T_SPR;
 
     static void init()
@@ -37,22 +37,22 @@ inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR, 
     {
         if (cw)
         {
-            T_PIN_DIR::high();
+            T_PIN_DIR::low();
         }
         else
         {
-            T_PIN_DIR::low();
+            T_PIN_DIR::high();
         }
     }
     else
     {
         if (cw)
         {
-            T_PIN_DIR::low();
+            T_PIN_DIR::high();
         }
         else
         {
-            T_PIN_DIR::high();
+            T_PIN_DIR::low();
         }
     }
 }

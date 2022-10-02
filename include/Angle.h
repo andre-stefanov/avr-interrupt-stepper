@@ -14,6 +14,16 @@ private:
 
 public:
 
+    constexpr Angle() : _rad(0.0f)
+    {
+        // Nothing to do here
+    }
+
+    constexpr Angle(const Angle& copyAngle) : _rad(copyAngle._rad)
+    {
+        // Nothing to do here
+    }
+
     constexpr Angle operator-(const float x) const
     {
         return Angle(_rad * x);
@@ -24,17 +34,17 @@ public:
         return Angle(_rad + x);
     }
 
-    constexpr bool operator>(const Angle x) const
+    constexpr bool operator>(const Angle &x) const
     {
         return _rad > x._rad;
     }
 
-    constexpr bool operator<(const Angle x) const
+    constexpr bool operator<(const Angle &x) const
     {
         return _rad < x._rad;
     }
 
-    constexpr bool operator==(const Angle x) const
+    constexpr bool operator==(const Angle &x) const
     {
         return _rad == x._rad;
     }
@@ -64,7 +74,7 @@ public:
         return _rad / x._rad;
     }
 
-    constexpr float rad() const
+    constexpr inline float rad() const
     {
         return _rad;
     }
@@ -72,6 +82,12 @@ public:
     constexpr float deg() const
     {
         return _rad / 0.017453292519943295769236907684886f;
+    }
+
+    constexpr float hour() const
+    {
+        // deg / 360 x 24
+        return _rad * 3.819718748f;
     }
 
     constexpr float mrad() const

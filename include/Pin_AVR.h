@@ -2,8 +2,6 @@
 
 #ifdef ARDUINO_ARCH_AVR
 
-#include "Pin.h"
-
 #include <Arduino.h>
 
 template <uint8_t PIN>

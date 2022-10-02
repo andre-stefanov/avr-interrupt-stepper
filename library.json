@@ -1,8 +1,11 @@
 {
     "name": "InterruptStepper",
     "version": "0.0.1",
-    "dependencies": {
-        "etlcpp/Embedded Template Library": "19.3.5"
+    "keywords": "stepper, interrupt",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/andre-stefanov/avr-interrupt-stepper.git"
     },
     "authors": {
         "name": "Andre Stefanov",
@@ -11,13 +14,17 @@
     },
     "frameworks": "arduino",
     "platforms": "atmelavr",
+    "dependencies": {
+        "etlcpp/Embedded Template Library": "20.32.1"
+    },
     "build": {
         "unflags": [
-            "-std=gnu++11"
+            "-std=gnu++11",
+            "-std=gnu++14"
         ],
         "flags": [
             "-std=c++17",
-            "-DETL_NO_STL"
+            "-D ETL_NO_STL"
         ]
     }
 }

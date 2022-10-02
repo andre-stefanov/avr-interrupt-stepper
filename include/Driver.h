@@ -37,22 +37,22 @@ inline __attribute__((always_inline)) void Driver<T_SPR, T_PIN_STEP, T_PIN_DIR, 
     {
         if (cw)
         {
-            T_PIN_DIR::high();
+            T_PIN_DIR::low();
         }
         else
         {
-            T_PIN_DIR::low();
+            T_PIN_DIR::high();
         }
     }
     else
     {
         if (cw)
         {
-            T_PIN_DIR::low();
+            T_PIN_DIR::high();
         }
         else
         {
-            T_PIN_DIR::high();
+            T_PIN_DIR::low();
         }
     }
 }

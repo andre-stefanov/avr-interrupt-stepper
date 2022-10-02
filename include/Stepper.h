@@ -37,7 +37,7 @@ template <typename INTERRUPT, typename DRIVER, typename RAMP>
 class Stepper
 {
 public:
-    static constexpr Angle ANGLE_PER_STEP = Angle::deg(360.0f) * DRIVER::SPR;
+    static constexpr Angle ANGLE_PER_STEP = Angle::deg(360.0f) / DRIVER::SPR;
 
 private:
     static volatile int32_t pos;
@@ -315,14 +315,11 @@ public:
         constexpr static MovementSpec time(const Angle speed, const uint32_t time_ms)
         {
             int8_t dir = speed.rad() >= 0.0f;
-            uint32_t steps = static_cast<uint32_t>(abs(speed.rad()) / (STEP_ANGLE.rad() * 1000.0f) * time_ms);
+            uint32_t steps = static_cast<uint32_t>(abs(speed.rad()) / (ANGLE_PER_STEP.rad() * 1000.0f) * time_ms);
             uint32_t run_interval = RAMP::getIntervalForSpeed(speed.rad());
             uint8_t full_accel_stairs = RAMP::maxAccelStairs(speed.rad());
             return MovementSpec(dir, steps, run_interval, full_accel_stairs);
         }
-
-    private:
-        constexpr static Angle STEP_ANGLE = Angle::deg(360.0f) / DRIVER::SPR;
     };
 
     static void stop()

@@ -9,8 +9,11 @@ class RampMock
 {
 public:
     MOCK_METHOD(uint32_t, interval, (unsigned int));
+    MOCK_METHOD(uint32_t, setCallback, (timer_callback));
     MOCK_METHOD(uint32_t, getIntervalForSpeed, (float));
     MOCK_METHOD(uint8_t, maxAccelStairs, (float));
+
+    virtual ~RampMock() {}
 
     template <typename T_REAL>
     void delegateToReal()
@@ -28,6 +31,9 @@ public:
     template <typename T_REAL>
     void expectLimits()
     {
+        EXPECT_CALL(*this, setCallback(_)).Times(AnyNumber());
+        EXPECT_CALL(*this, getIntervalForSpeed(_)).Times(AnyNumber());
+        EXPECT_CALL(*this, maxAccelStairs(_)).Times(AnyNumber());
         EXPECT_CALL(*this, interval(_)).Times(AnyNumber());
         EXPECT_CALL(*this, interval(0)).Times(0);
         EXPECT_CALL(*this, interval(Ge(T_REAL::STAIRS_COUNT))).Times(0);

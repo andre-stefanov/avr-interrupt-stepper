@@ -18,7 +18,6 @@ struct MockedDriver
 
     static void step()
     {
-        std::cout << "step" << std::endl;
         mock->step();
     }
 

@@ -95,11 +95,11 @@ class AccelerationRamp {
     constexpr static float STEPS_PER_STAIR_IDEAL = UTIL_ACCELERATION_RAD / ACCELERATION_RAD;
     static_assert(STEPS_PER_STAIR_IDEAL <= 128);
 
-    constexpr static Intervals<STAIRS> intervals = calculateIntervals();
-    static_assert(intervals[0] > 0);
-
 public:
     AccelerationRamp() = delete;
+
+    constexpr static Intervals<STAIRS> intervals = calculateIntervals();
+    static_assert(intervals[0] > 0);
 
     constexpr static uint8_t STAIRS_COUNT = STAIRS;
     static_assert(STAIRS_COUNT > 0);

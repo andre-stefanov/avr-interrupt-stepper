@@ -6,6 +6,8 @@ template <uint8_t PIN>
 class Pin
 {
 public:
+    Pin() = delete;
+
     static void init();
 
     static inline __attribute__((always_inline)) void pulse();
@@ -13,9 +15,6 @@ public:
     static inline __attribute__((always_inline)) void high();
 
     static inline __attribute__((always_inline)) void low();
-
-private:
-    Pin() = delete;
 };
 
 #ifndef PIN_CUSTOM_IMPL

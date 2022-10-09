@@ -6,7 +6,8 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
-#define DEBUG_INTERRUPT_TIMING_PIN 0
+#define DEBUG_INTERRUPT_TIMING_PIN 46
+// #define DEBUG_INTERRUPT_TIMING_PIN 0
 #if DEBUG_INTERRUPT_TIMING_PIN != 0 && UNIT_TEST != 1
 #include <Pin.h>
 #define INTERRUPT_TIMING_START() Pin<DEBUG_INTERRUPT_TIMING_PIN>::high()
@@ -47,8 +48,8 @@ struct IntervalInterrupt_AVR
     static volatile uint16_t *const _ocra;
     static volatile uint8_t *const _tifr;
 
-    static volatile uint16_t ovf_cnt;
-    static volatile uint16_t ovf_left;
+    static volatile uint8_t ovf_cnt;
+    static volatile uint8_t ovf_left;
 
     static volatile timer_callback callback;
 
@@ -79,7 +80,7 @@ struct IntervalInterrupt_AVR
         INTERRUPT_TIMING_START();
 
         // check if we need to switch to overflows again (slow frequency)
-        if (ovf_cnt)
+        if (ovf_cnt > 0)
         {
             // disable interrupt on counter value compare match
             *_timsk &= ~(1 << 1);
@@ -118,14 +119,15 @@ void IntervalInterrupt<T>::init()
 template <Timer T>
 inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uint32_t value)
 {
-    SET_INTERVAL_TIMING_START();
+    // SET_INTERVAL_TIMING_START();
+    PORTL = 0xFF;
 
     // lower 16 bit of value will be used for compare match. thus we are only interested
     // in higher 16 bit for amount of overflows
-    IntervalInterrupt_AVR<T>::ovf_cnt = (value >> 16);
+    IntervalInterrupt_AVR<T>::ovf_cnt = static_cast<uint8_t>(value >> 16);
 
     // set compare match to the value of lower 16 bits
-    *IntervalInterrupt_AVR<T>::_ocra = (value & 0xFFFF) - 1;
+    *IntervalInterrupt_AVR<T>::_ocra = static_cast<uint16_t>((value & 0xFFFF) - 1);
 
     if (IntervalInterrupt_AVR<T>::ovf_cnt == 0)
     {
@@ -142,7 +144,8 @@ inline __attribute__((always_inline)) void IntervalInterrupt<T>::setInterval(uin
     // set prescaler to 1 (count at MCU frequency)
     *IntervalInterrupt_AVR<T>::_tccrb |= 1;
 
-    SET_INTERVAL_TIMING_END();
+    PORTL = 0x00;
+    // SET_INTERVAL_TIMING_END();
 }
 
 template <Timer T>
@@ -270,10 +273,10 @@ constexpr volatile uint16_t *TCNT()
 }
 
 template <Timer T>
-volatile uint16_t IntervalInterrupt_AVR<T>::ovf_cnt = 0;
+volatile uint8_t IntervalInterrupt_AVR<T>::ovf_cnt = 0;
 
 template <Timer T>
-volatile uint16_t IntervalInterrupt_AVR<T>::ovf_left = 0;
+volatile uint8_t IntervalInterrupt_AVR<T>::ovf_left = 0;
 
 template <Timer T>
 volatile uint8_t *const IntervalInterrupt_AVR<T>::_tccra = TCCRA<T>();

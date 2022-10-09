@@ -20,7 +20,7 @@
 
 #include "AccelerationRamp.h"
 #include "etl/delegate.h"
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #include "Angle.h"
 
 using StepperCallback = etl::delegate<void()>;
@@ -37,6 +37,12 @@ template <typename INTERRUPT, typename DRIVER, typename RAMP>
 class Stepper
 {
 public:
+
+    /**
+     * @brief Static class. We don't need constructor.
+     */
+    Stepper() = delete;
+
     static constexpr Angle ANGLE_PER_STEP = Angle::deg(360.0f) / DRIVER::SPR;
 
 private:
@@ -53,11 +59,6 @@ private:
     static volatile uint32_t run_steps_left;
 
     static StepperCallback cb_complete;
-
-    /**
-     * @brief Static class. We don't need constructor.
-     */
-    Stepper() = delete;
 
     static inline __attribute__((always_inline)) void step()
     {
@@ -103,7 +104,7 @@ private:
             INTERRUPT::setCallback(pre_decelerate_handler);
             INTERRUPT::setInterval(RAMP::interval(ramp_stair));
         }
-        // accelerate (for faster speed)
+        // accelerate (for faster run speed)
         else if (accel_steps > 0)
         {
             if (ramp_stair == 0)
@@ -140,7 +141,7 @@ private:
 
     static void pre_decelerate_handler()
     {
-        // always step first to ensure best accuracy.
+        // always step first to ensure the best accuracy.
         // other calculations should be done as quick as possible below.
         step();
 
@@ -178,7 +179,7 @@ private:
 
     static void accelerate_handler()
     {
-        // always step first to ensure best accuracy.
+        // always step first to ensure the best accuracy.
         // other calculations should be done as quick as possible below.
         step();
 
@@ -187,10 +188,13 @@ private:
         // reached max amount of acceleration steps
         if (accel_steps_left == 0)
         {
+            // no run phase needed, proceed with deceleration directly
             if (run_steps_left == 0)
             {
                 INTERRUPT::setCallback(decelerate_handler);
+                INTERRUPT::setInterval(RAMP::interval(ramp_stair));
             }
+            // switch to run phase
             else
             {
                 INTERRUPT::setCallback(run_handler);
@@ -212,27 +216,32 @@ private:
 
     static void run_handler()
     {
-        // always step first to ensure the best accuracy.
-        // other calculations should be done as quick as possible below.
-        step();
+        DRIVER::step();
 
-        if (--run_steps_left == 0)
-        {
-            if (ramp_stair == 0)
-            {
-                terminate();
-            }
-            else
-            {
-                INTERRUPT::setCallback(decelerate_handler);
-                INTERRUPT::setInterval(RAMP::interval(ramp_stair));
-            }
-        }
+        // // always step first to ensure the best accuracy.
+        // // other calculations should be done as quick as possible below.
+        // step();
+
+        // // is this the last run step?
+        // if (--run_steps_left == 0)
+        // {
+        //     // we dont need to decelerate, run speed was slow
+        //     if (ramp_stair == 0)
+        //     {
+        //         terminate();
+        //     }
+        //     // run speed was fast, need to decelerate
+        //     else
+        //     {
+        //         INTERRUPT::setCallback(decelerate_handler);
+        //         INTERRUPT::setInterval(RAMP::interval(ramp_stair));
+        //     }
+        // }
     }
 
     static void decelerate_handler()
     {
-        // always step first to ensure best accuracy.
+        // always step first to ensure the best accuracy.
         // other calculations should be done as quick as possible below.
         step();
 
@@ -261,7 +270,7 @@ public:
         return ret;
     }
 
-    static void position(Angle value)
+    static void position(const Angle& value)
     {
         noInterrupts();
         pos = static_cast<int32_t>((DRIVER::SPR / (2.0f * 3.14159265358979323846f)) * value.rad() + 0.5f);
@@ -312,10 +321,10 @@ public:
             // nothing to do here, all values have been initialized
         }
 
-        constexpr static MovementSpec time(const Angle speed, const uint32_t time_ms)
+        constexpr static MovementSpec time(const Angle& speed, const uint32_t time_ms)
         {
             int8_t dir = speed.rad() >= 0.0f;
-            uint32_t steps = static_cast<uint32_t>(abs(speed.rad()) / (ANGLE_PER_STEP.rad() * 1000.0f) * time_ms);
+            auto steps = static_cast<uint32_t>(abs(speed.rad()) / ANGLE_PER_STEP.mrad() * static_cast<float>(time_ms));
             uint32_t run_interval = RAMP::getIntervalForSpeed(speed.rad());
             uint8_t full_accel_stairs = RAMP::maxAccelStairs(speed.rad());
             return MovementSpec(dir, steps, run_interval, full_accel_stairs);

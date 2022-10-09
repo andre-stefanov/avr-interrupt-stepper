@@ -20,13 +20,14 @@ struct IntervalInterruptMock
     MOCK_METHOD(void, setInterval, (uint32_t));
     MOCK_METHOD(void, stop, ());
 
-    void loopUntilStopped(uint32_t limit)
+    void loopUntilStopped(uint32_t limit) const
     {
         uint32_t loop = 0;
         while (loop++ < limit && callback != nullptr)
         {
             callback();
         }
+        ASSERT_EQ(callback, nullptr);
     }
 };
 

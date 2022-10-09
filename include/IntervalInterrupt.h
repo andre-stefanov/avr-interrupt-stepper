@@ -1,18 +1,18 @@
-#pragma once
+#ifndef INTERVAL_INTERRUPT_H
+#define INTERVAL_INTERRUPT_H
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
-typedef void (*timer_callback)(void);
+typedef void (*timer_callback)();
 
 enum class Timer : int;
 
 template <Timer T>
 class IntervalInterrupt
 {
-private:
+public:
     IntervalInterrupt() = delete;
 
-public:
     const static unsigned long int FREQ;
 
     static void init();
@@ -35,3 +35,5 @@ public:
 #endif
 
 #endif // CUSTOM_TIMER_INTERRUPT_IMPL
+
+#endif // INTERVAL_INTERRUPT_H

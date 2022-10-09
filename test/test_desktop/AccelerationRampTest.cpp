@@ -43,7 +43,7 @@ using TestTypes = ::testing::Types<
     FixtureParams<128, 400UL * 128UL, OAT_RA_DEG(2), OAT_RA_DEG(4)>,
     FixtureParams<128, 400UL * 256UL, OAT_RA_DEG(2), OAT_RA_DEG(4)>>;
 
-class AccelerationRampTestNames
+/*class AccelerationRampTestNames
 {
 public:
     template <typename T>
@@ -58,9 +58,9 @@ public:
         ss << ">";
         return ss.str();
     }
-};
+};*/
 
-TYPED_TEST_SUITE(AccelerationRampTest, TestTypes, AccelerationRampTestNames);
+TYPED_TEST_SUITE(AccelerationRampTest, TestTypes/*, AccelerationRampTestNames*/);
 
 TYPED_TEST(AccelerationRampTest, interval_0)
 {

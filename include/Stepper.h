@@ -216,27 +216,25 @@ private:
 
     static void run_handler()
     {
-        DRIVER::step();
+        // always step first to ensure the best accuracy.
+        // other calculations should be done as quick as possible below.
+        step();
 
-        // // always step first to ensure the best accuracy.
-        // // other calculations should be done as quick as possible below.
-        // step();
-
-        // // is this the last run step?
-        // if (--run_steps_left == 0)
-        // {
-        //     // we dont need to decelerate, run speed was slow
-        //     if (ramp_stair == 0)
-        //     {
-        //         terminate();
-        //     }
-        //     // run speed was fast, need to decelerate
-        //     else
-        //     {
-        //         INTERRUPT::setCallback(decelerate_handler);
-        //         INTERRUPT::setInterval(RAMP::interval(ramp_stair));
-        //     }
-        // }
+        // is this the last run step?
+        if (--run_steps_left == 0)
+        {
+            // we dont need to decelerate, run speed was slow
+            if (ramp_stair == 0)
+            {
+                terminate();
+            }
+            // run speed was fast, need to decelerate
+            else
+            {
+                INTERRUPT::setCallback(decelerate_handler);
+                INTERRUPT::setInterval(RAMP::interval(ramp_stair));
+            }
+        }
     }
 
     static void decelerate_handler()

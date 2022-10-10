@@ -9,8 +9,8 @@
 // CONFIGURATION
 #define RA_STEPPER_SPR (400UL * 256UL)
 #define RA_TRANSMISSION 35.46611505122143f
-#define RA_SLEWING_SPEED 2.0f        // deg/s
-#define RA_SLEWING_ACCELERATION 4.0f // deg/s/s
+#define RA_SLEWING_SPEED 8.0f        // deg/s
+#define RA_SLEWING_ACCELERATION 64.0f // deg/s/s
 #define RA_GUIDING_SPEED 0.5f        // fraction of sidereal speed to add/substract to/from tracking speed
 #define RA_DRIVER_INVERT_STEP false
 

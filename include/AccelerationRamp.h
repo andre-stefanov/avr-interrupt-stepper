@@ -102,7 +102,6 @@ public:
     static_assert(intervals[0] > 0);
 
     constexpr static uint8_t STAIRS_COUNT = STAIRS;
-    static_assert(STAIRS_COUNT > 0);
 
     constexpr static uint8_t STEPS_PER_STAIR = floor_pow2_u8((uint8_t) STEPS_PER_STAIR_IDEAL);
     constexpr static uint8_t FIRST_STEP = 0;
@@ -116,11 +115,11 @@ public:
         return intervals[stair];
     }
 
-    static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(float radPerSec) {
+    static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(const float radPerSec) {
         return (uint32_t) (T_FREQ * STEP_ANGLE / abs(radPerSec) + 0.5f);
     }
 
-    static constexpr inline __attribute__((always_inline)) uint8_t maxAccelStairs(float radPerSec) {
+    static constexpr inline __attribute__((always_inline)) uint8_t maxAccelStairs(const float radPerSec) {
         if (abs(radPerSec) >= MAX_SPEED_RAD) {
             return STAIRS - 1;
         } else {

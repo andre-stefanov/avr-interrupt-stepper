@@ -37,7 +37,6 @@ template <typename INTERRUPT, typename DRIVER, typename RAMP>
 class Stepper
 {
 public:
-
     /**
      * @brief Static class. We don't need constructor.
      */
@@ -57,6 +56,8 @@ private:
     static volatile uint8_t pre_decel_stairs_left;
     static volatile uint16_t accel_steps_left;
     static volatile uint32_t run_steps_left;
+
+    static volatile uint8_t run128_steps_left;
 
     static StepperCallback cb_complete;
 
@@ -197,8 +198,16 @@ private:
             // switch to run phase
             else
             {
-                INTERRUPT::setCallback(run_handler);
                 INTERRUPT::setInterval(run_interval);
+                if (run_steps_left / 128 > 0)
+                {
+                    run128_steps_left = 128;
+                    INTERRUPT::setCallback(run128_handler);
+                }
+                else
+                {
+                    INTERRUPT::setCallback(run_handler);
+                }
             }
         }
         // did not finish current stair yet
@@ -211,6 +220,32 @@ private:
         {
             INTERRUPT::setInterval(RAMP::interval(++ramp_stair));
             ramp_stair_step = 0;
+        }
+    }
+
+    static void run128_handler()
+    {
+        DRIVER::step();
+
+        if (--run128_steps_left == 0)
+        {
+            const int8_t diff = (dir > 0) ? 128 : -128;
+            pos += diff;
+            run_steps_left -= 128;
+            run128_steps_left = 128;
+
+            if (run_steps_left / 128 == 0)
+            {
+                if (run_steps_left % 128 > 0)
+                {
+                    INTERRUPT::setCallback(run_handler);
+                }
+                else
+                {
+                    INTERRUPT::setInterval(RAMP::interval(ramp_stair));
+                    INTERRUPT::setCallback(decelerate_handler);
+                }
+            }
         }
     }
 
@@ -268,7 +303,7 @@ public:
         return ret;
     }
 
-    static void position(const Angle& value)
+    static void position(const Angle &value)
     {
         noInterrupts();
         pos = static_cast<int32_t>((DRIVER::SPR / (2.0f * 3.14159265358979323846f)) * value.rad() + 0.5f);
@@ -300,7 +335,10 @@ public:
             : dir(_dir),
               steps(_steps),
               run_interval(_run_interval),
-              full_accel_stairs(_full_accel_stairs) {}
+              full_accel_stairs(_full_accel_stairs)
+        {
+            // nothing to do here, all values have been initialized
+        }
 
         constexpr MovementSpec(const Angle speed, const Angle distance)
             : MovementSpec(
@@ -319,7 +357,7 @@ public:
             // nothing to do here, all values have been initialized
         }
 
-        constexpr static MovementSpec time(const Angle& speed, const uint32_t time_ms)
+        constexpr static MovementSpec time(const Angle &speed, const uint32_t time_ms)
         {
             int8_t dir = speed.rad() >= 0.0f;
             auto steps = static_cast<uint32_t>(abs(speed.rad()) / ANGLE_PER_STEP.mrad() * static_cast<float>(time_ms));
@@ -558,3 +596,6 @@ uint16_t volatile Stepper<INTERRUPT, DRIVER, RAMP>::accel_steps_left = 0;
 
 template <typename INTERRUPT, typename DRIVER, typename RAMP>
 uint32_t volatile Stepper<INTERRUPT, DRIVER, RAMP>::run_steps_left = 0;
+
+template <typename INTERRUPT, typename DRIVER, typename RAMP>
+uint8_t volatile Stepper<INTERRUPT, DRIVER, RAMP>::run128_steps_left = 0;

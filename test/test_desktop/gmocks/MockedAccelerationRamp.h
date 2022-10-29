@@ -13,12 +13,12 @@ public:
     MOCK_METHOD(uint32_t, getIntervalForSpeed, (float));
     MOCK_METHOD(uint8_t, maxAccelStairs, (float));
 
-    virtual ~RampMock() {}
+    virtual ~RampMock() = default;
 
     template <typename T_REAL>
     void delegateToReal()
     {
-        ON_CALL(*this, interval).WillByDefault([this](unsigned int stair)
+        ON_CALL(*this, interval).WillByDefault([this](uint16_t stair)
                                                { return T_REAL::interval(stair); });
 
         ON_CALL(*this, getIntervalForSpeed).WillByDefault([this](float radPerSec)
@@ -31,7 +31,6 @@ public:
     template <typename T_REAL>
     void expectLimits()
     {
-        EXPECT_CALL(*this, setCallback(_)).Times(AnyNumber());
         EXPECT_CALL(*this, getIntervalForSpeed(_)).Times(AnyNumber());
         EXPECT_CALL(*this, maxAccelStairs(_)).Times(AnyNumber());
         EXPECT_CALL(*this, interval(_)).Times(AnyNumber());
@@ -62,7 +61,7 @@ struct MockedAccelerationRamp
         mock->expectLimits<REAL_TYPE>();
     }
 
-    static uint32_t interval(unsigned int stair)
+    static uint32_t interval(uint16_t stair)
     {
         return mock->interval(stair);
     }

@@ -172,12 +172,12 @@ struct IntervalInterrupt_AVR
 #if DEBUG_INTERRUPT_TIMING_PIN != 0
         Pin<DEBUG_INTERRUPT_TIMING_PIN>::init();
 #endif
-        cli();                // disable interrupts
-        *TCCRA() = 0;         // reset timer/counter control register A
-        *TCCRB() = 0;         // set prescaler to 0 (disable this interrupt)
-        *TCNT() = 0;          // reset counter
-        *TIMSK() |= (1 << 0); // enable interrupt on counter overflow
-        sei();                // reenable interrupts
+        cli();              // disable interrupts
+        *TCCRA() = 0;       // reset timer/counter control register A
+        *TCCRB() = 0;       // set prescaler to 0 (disable this interrupt)
+        *TCNT() = 0;        // reset counter
+        *TIMSK() |= bit(0); // enable interrupt on counter overflow
+        sei();              // reenable interrupts
     }
 
     static inline __attribute__((always_inline)) void setInterval(uint32_t value)

@@ -1,4 +1,4 @@
-#pragma once
+
 
 #include "Angle.h"
 #include "Pin.h"
@@ -10,7 +10,7 @@
 #define RA_STEPPER_SPR (400UL * 256UL)
 #define RA_TRANSMISSION 35.46611505122143f
 #define RA_SLEWING_SPEED 8.0f        // deg/s
-#define RA_SLEWING_ACCELERATION 64.0f // deg/s/s
+#define RA_SLEWING_ACCELERATION 8.0f // deg/s/s
 #define RA_GUIDING_SPEED 0.5f        // fraction of sidereal speed to add/substract to/from tracking speed
 #define RA_DRIVER_INVERT_STEP false
 
@@ -45,7 +45,7 @@ namespace config
 
         using interrupt = IntervalInterrupt<TIMER_RA>;
         using driver = Driver<SPR, pin_step, pin_dir, RA_DRIVER_INVERT_STEP>;
-        using ramp = AccelerationRamp<64, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using ramp = AccelerationRamp<256, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
         using stepper = Stepper<interrupt, driver, ramp>;
     };
 

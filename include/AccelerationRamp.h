@@ -5,7 +5,7 @@
 #include <math.h>
 #include "NewtonRaphson.h"
 
-template<uint8_t N>
+template<uint16_t N>
 struct Intervals {
     uint32_t data[N];
 
@@ -27,7 +27,7 @@ struct Intervals {
 /// @tparam MAX_SPEED_mRAD maximal possible speed in mrad/s
 /// @tparam ACCELERATION_mRAD maximal possible speed in mrad/s/s
 ///
-template<uint8_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
+template<uint16_t STAIRS, uint32_t T_FREQ, uint32_t SPR, uint32_t MAX_SPEED_mRAD, uint32_t ACCELERATION_mRAD>
 class AccelerationRamp {
     template<typename T>
     constexpr static inline __attribute__((always_inline)) bool is_pow2(const T value) {
@@ -35,7 +35,7 @@ class AccelerationRamp {
     }
 
     static_assert(STAIRS > 0, "Amount of stairs has to be at least 1");
-    static_assert(STAIRS <= 128, "Amount of stairs has to be at most 128");
+    static_assert(STAIRS <= UINT16_MAX / 2, "Amount of stairs has to be at most 2^15");
     static_assert(is_pow2(STAIRS), "Amount of stairs has to be power of 2");
 
     static_assert(T_FREQ > 0, "Timer frequency has to be greater than zero");
@@ -93,7 +93,7 @@ class AccelerationRamp {
     }
 
     constexpr static float STEPS_PER_STAIR_IDEAL = UTIL_ACCELERATION_RAD / ACCELERATION_RAD;
-    static_assert(STEPS_PER_STAIR_IDEAL <= 128);
+    static_assert(STEPS_PER_STAIR_IDEAL <= UINT8_MAX);
 
 public:
     AccelerationRamp() = delete;
@@ -101,7 +101,7 @@ public:
     constexpr static Intervals<STAIRS> intervals = calculateIntervals();
     static_assert(intervals[0] > 0);
 
-    constexpr static uint8_t STAIRS_COUNT = STAIRS;
+    constexpr static uint16_t STAIRS_COUNT = STAIRS;
 
     constexpr static uint8_t STEPS_PER_STAIR = floor_pow2_u8((uint8_t) STEPS_PER_STAIR_IDEAL);
     constexpr static uint8_t FIRST_STEP = 0;
@@ -111,7 +111,7 @@ public:
     static_assert(STEPS_PER_STAIR <= 128, "Amount of steps per stair has to be at most 128");
     static_assert(is_pow2(STEPS_PER_STAIR), "Amount of steps per stair has to be power of 2");
 
-    static constexpr inline __attribute__((always_inline)) uint32_t interval(const unsigned int stair) {
+    static constexpr inline __attribute__((always_inline)) uint32_t interval(const uint16_t stair) {
         return intervals[stair];
     }
 
@@ -119,7 +119,7 @@ public:
         return (uint32_t) (T_FREQ * STEP_ANGLE / abs(radPerSec) + 0.5f);
     }
 
-    static constexpr inline __attribute__((always_inline)) uint8_t maxAccelStairs(const float radPerSec) {
+    static constexpr inline __attribute__((always_inline)) uint16_t maxAccelStairs(const float radPerSec) {
         if (abs(radPerSec) >= MAX_SPEED_RAD) {
             return STAIRS - 1;
         } else {

@@ -13,10 +13,13 @@ Mount mount;
 //     pin_step::pulse();
 // }
 
-TMC2209Stepper* stepper;
+TMC2209Stepper *stepper = nullptr;
 
 void setup()
 {
+    // Serial.begin(115200);
+    // while(!Serial);
+
     pinMode(38, OUTPUT);
     digitalWrite(30, HIGH);
 
@@ -26,16 +29,18 @@ void setup()
     stepper->mstep_reg_select(true);
     stepper->pdn_disable(true);
     stepper->toff(0);
-    stepper->rms_current(1000, 1.0f);  //holdMultiplier = 1 to set ihold = irun
+    stepper->rms_current(1000, 1.0f); // holdMultiplier = 1 to set ihold = irun
     stepper->toff(1);
     stepper->I_scale_analog(false);
     stepper->en_spreadCycle(0);
     stepper->blank_time(24);
-    stepper->semin(0);                                                                    //disable CoolStep so that current is consistent
-    stepper->microsteps(256);  // System starts in tracking mode
-    stepper->fclktrim(4);
+    stepper->semin(0); // disable CoolStep so that current is consistent
+    stepper->microsteps(128);
+    stepper->intpol(true);
+    // stepper->dedge(true);
+    // stepper->fclktrim(4);
     stepper->TCOOLTHRS(0xFFFFF);
-    
+
     mount.setup();
     // mount.track(true);
 
@@ -69,6 +74,10 @@ void loop()
 
     do
     {
+        // if (IntervalInterrupt_AVR<Timer::TIMER_3>::callback != nullptr)
+        // {
+        //     IntervalInterrupt_AVR<Timer::TIMER_3>::callback();
+        // }
         // finish
     } while (1);
 }

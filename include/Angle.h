@@ -1,13 +1,13 @@
 #pragma once
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 
 class Angle
 {
 private:
     float _rad;
 
-    constexpr Angle(const float rad) : _rad(rad)
+    constexpr explicit Angle(const float rad) : _rad(rad)
     {
         // Nothing to do here
     }
@@ -19,10 +19,7 @@ public:
         // Nothing to do here
     }
 
-    constexpr Angle(const Angle& copyAngle) : _rad(copyAngle._rad)
-    {
-        // Nothing to do here
-    }
+    constexpr Angle(const Angle& copyAngle) = default;
 
     constexpr Angle operator-(const float x) const
     {

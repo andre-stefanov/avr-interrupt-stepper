@@ -39,14 +39,14 @@ public:
     }
 };
 
-template <uint8_t T_STAIRS, uint32_t T_FREQ, uint32_t T_SPR, uint32_t T_MAX_SPEED_mRAD, uint32_t T_ACCELERATION_mRAD>
+template <uint16_t T_STAIRS, uint32_t T_FREQ, uint32_t T_SPR, uint32_t T_MAX_SPEED_mRAD, uint32_t T_ACCELERATION_mRAD>
 struct MockedAccelerationRamp
 {
     using REAL_TYPE = AccelerationRamp<T_STAIRS, T_FREQ, T_SPR, T_MAX_SPEED_mRAD, T_ACCELERATION_mRAD>;
 
     static RampMock *mock;
 
-    constexpr static uint8_t STAIRS_COUNT = REAL_TYPE::STAIRS_COUNT;
+    constexpr static uint16_t STAIRS_COUNT = REAL_TYPE::STAIRS_COUNT;
     constexpr static uint8_t STEPS_PER_STAIR = REAL_TYPE::STEPS_PER_STAIR;
     constexpr static uint8_t FIRST_STEP = REAL_TYPE::FIRST_STEP;
     constexpr static uint8_t LAST_STEP = REAL_TYPE::LAST_STEP;
@@ -77,5 +77,5 @@ struct MockedAccelerationRamp
     }
 };
 
-template <uint8_t T_STAIRS, uint32_t T_FREQ, uint32_t T_SPR, uint32_t T_MAX_SPEED_mRAD, uint32_t T_ACCELERATION_mRAD>
+template <uint16_t T_STAIRS, uint32_t T_FREQ, uint32_t T_SPR, uint32_t T_MAX_SPEED_mRAD, uint32_t T_ACCELERATION_mRAD>
 RampMock *MockedAccelerationRamp<T_STAIRS, T_FREQ, T_SPR, T_MAX_SPEED_mRAD, T_ACCELERATION_mRAD>::mock = nullptr;

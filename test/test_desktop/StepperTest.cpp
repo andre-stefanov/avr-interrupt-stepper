@@ -86,7 +86,7 @@ constexpr auto ACCELERATION = TRANSMISSION * Angle::deg(4.0f);
 
 using OatRAInterrupt = MockedIntervalInterrupt<0>;
 using OatRADriver = MockedDriver<SPR>;
-using OatRARamp = MockedAccelerationRamp<128, F_CPU, SPR, SLEWING_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
+using OatRARamp = MockedAccelerationRamp<256, F_CPU, SPR, SLEWING_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
 using OatRaFixture = FixtureParams<OatRAInterrupt, OatRADriver, OatRARamp>;
 
 using TestTypes = ::testing::Types<OatRaFixture>;
@@ -358,9 +358,6 @@ TYPED_TEST(StepperTest, moveBy_runningAtMaxCw_slowCw) {
 
     const auto speed_test = TestFixture::speed_slow;
     const uint32_t steps = (stair_before * TestFixture::Ramp::STEPS_PER_STAIR) + 100;
-
-//    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-//    EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(_)).Times(AnyNumber());
 
     {
         InSequence s;

@@ -1,8 +1,8 @@
 #ifndef ACCELERATION_RAMP_H
 #define ACCELERATION_RAMP_H
 
-#include <stdint.h>
-#include <math.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
+#include <math.h> // NOLINT(modernize-deprecated-headers)
 #include "NewtonRaphson.h"
 
 template<uint16_t N>

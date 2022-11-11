@@ -1,23 +1,76 @@
+#include <utility>
+
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "Stepper.h"
+#include "Angle.h"
 #include "gmocks/MockedIntervalInterrupt.h"
 #include "gmocks/MockedDriver.h"
 #include "gmocks/MockedAccelerationRamp.h"
+#include "Stepper.h"
 
-using namespace ::testing;
+constexpr auto SPR = 400UL * 256UL;
+constexpr auto TRANSMISSION = 35.46611505122143f;
+constexpr auto TRACKING_SPEED = Angle::deg(360.0f) / 86164.0905f;
+constexpr auto SLEWING_SPEED = TRANSMISSION * Angle::deg(8.0f);
+constexpr auto ACCELERATION = TRANSMISSION * Angle::deg(8.0f);
 
-template<typename T_Interrupt, typename T_Driver, typename T_Ramp>
-struct FixtureParams {
-    using Interrupt = T_Interrupt;
-    using Driver = T_Driver;
-    using Ramp = T_Ramp;
+using Interrupt = MockedIntervalInterrupt<0>;
+using Driver = MockedDriver<SPR>;
+using Ramp = MockedAccelerationRamp<256, F_CPU, SPR, SLEWING_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
+
+using TestStepper = Stepper<Interrupt, Driver, Ramp>;
+
+template<typename T>
+struct NamedValue {
+    NamedValue(std::string name, T value) : name(std::move(name)), value(value) {}
+
+    std::string name;
+    T value;
 };
 
-template<typename T_Params>
-struct StepperTest : public Test {
-protected:
+struct Movement {
+    Movement(
+            uint16_t preDecelStairs,
+            uint16_t accelStairs,
+            uint32_t runSteps,
+            uint32_t run_interval,
+            uint16_t decelStairs)
+            : pre_decel_stairs(preDecelStairs),
+              accel_stairs(accelStairs),
+              run_steps(runSteps),
+              run_interval(run_interval),
+              decel_stairs(decelStairs) {}
+
+    const uint16_t pre_decel_stairs;
+    const uint16_t accel_stairs;
+    const uint32_t run_steps;
+    const uint32_t run_interval;
+    const uint16_t decel_stairs;
+};
+
+struct StepperStopTestParams {
+    StepperStopTestParams(
+            std::string name,
+            Angle initial_speed,
+            uint16_t expect_decel_stairs)
+            : name(std::move(name)),
+              initial_speed(initial_speed),
+              expect_decel_stairs(expect_decel_stairs) {}
+
+    std::string name;
+    Angle initial_speed;
+    uint16_t expect_decel_stairs;
+
+    [[nodiscard]] uint32_t expect_steps() const {
+        const uint32_t decel_stairs = expect_decel_stairs;
+        const uint32_t steps_per_stair = Ramp::STEPS_PER_STAIR;
+        return decel_stairs * steps_per_stair;
+    }
+};
+
+template<typename T>
+struct StepperTest : public testing::TestWithParam<T> {
     void SetUp() override {
         Interrupt::mock = new StrictMock<IntervalInterruptMock>();
         Driver::mock = new StrictMock<DriverMock>();
@@ -33,424 +86,376 @@ protected:
         delete Interrupt::mock;
         delete Driver::mock;
         delete Ramp::mock;
+
+        TestStepper::reset();
     }
 
-public:
-    using Interrupt = typename T_Params::Interrupt;
-    using Driver = typename T_Params::Driver;
-    using Ramp = typename T_Params::Ramp;
+    static void prepareSpeed(Angle speed) {
+        if (speed.mrad_u32() == 0) {
+            return;
+        }
 
-    using stepper_t = Stepper<Interrupt, Driver, Ramp>;
-
-    static constexpr Angle speedAtStair(uint16_t stair)
-    {
-        return stepper_t::ANGLE_PER_STEP * (static_cast<float>(F_CPU) / Ramp::REAL_TYPE::interval(stair));
-    }
-
-    // Speed not requiring any acceleration
-    static constexpr Angle speed_slow = speedAtStair(1) / 10.0f;
-
-    // Maximal speed of the ramp (last stair)
-    static constexpr Angle speed_max = speedAtStair(Ramp::REAL_TYPE::STAIRS_COUNT - 1);
-
-    static void inline prepareSpeed(Angle speed)
-    {
         const uint16_t max_stair = Ramp::maxAccelStairs(abs(speed.rad()));
-        const uint32_t steps = static_cast<uint32_t>(max_stair) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR);
+        const auto steps = static_cast<int>(max_stair) * static_cast<int>(Ramp::STEPS_PER_STAIR) + 1;
 
         EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
         EXPECT_CALL(*Driver::mock, dir(speed.rad() >= 0.0f)).Times(1);
 
-        if (max_stair > 0)
-        {
+        if (max_stair > 0) {
             for (uint32_t stair = 1; stair <= max_stair; stair++) {
                 uint32_t interval = Ramp::REAL_TYPE::interval(stair);
                 EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
             }
         }
 
-        EXPECT_CALL(*Interrupt::mock, setInterval(Ramp::REAL_TYPE::getIntervalForSpeed(speed.rad()))).RetiresOnSaturation();
+        EXPECT_CALL(
+                *Interrupt::mock,
+                setInterval(Ramp::REAL_TYPE::getIntervalForSpeed(speed.rad()))
+        ).RetiresOnSaturation();
 
         EXPECT_CALL(*Driver::mock, step()).Times(steps).RetiresOnSaturation();
 
-        stepper_t::moveTo(speed, INT32_MAX);
+        TestStepper::moveTo(speed, INT32_MAX);
         Interrupt::loopUntilStopped(steps, false);
     }
-};
 
-constexpr auto SPR = 400UL * 256UL;
-constexpr auto TRANSMISSION = 35.46611505122143f;
-constexpr auto TRACKING_SPEED = Angle::deg(360.0f) / 86164.0905f;
-constexpr auto SLEWING_SPEED = TRANSMISSION * Angle::deg(2.0f);
-constexpr auto ACCELERATION = TRANSMISSION * Angle::deg(4.0f);
-
-using OatRAInterrupt = MockedIntervalInterrupt<0>;
-using OatRADriver = MockedDriver<SPR>;
-using OatRARamp = MockedAccelerationRamp<256, F_CPU, SPR, SLEWING_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
-using OatRaFixture = FixtureParams<OatRAInterrupt, OatRADriver, OatRARamp>;
-
-using TestTypes = ::testing::Types<OatRaFixture>;
-
-class StepperTestNames {
-public:
-    template<typename T>
-    static std::string GetName(int i) {
-        switch (i) {
-            case 0:
-                return "OAT_RA";
-            default:
-                return std::to_string(i);
-        }
+    static constexpr Angle speedAtStair(uint16_t stair) {
+        return TestStepper::ANGLE_PER_STEP *
+               static_cast<float>(F_CPU) /
+               static_cast<float>(Ramp::REAL_TYPE::interval(stair));
     }
 };
 
-TYPED_TEST_SUITE(StepperTest, TestTypes, StepperTestNames);
+using StepperStopTest = StepperTest<StepperStopTestParams>;
 
-TYPED_TEST(StepperTest, moveBy_idle_0steps_slow_cw) {
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(nullptr)).Times(1);
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(0);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(_)).Times(0);
-
-    TestFixture::stepper_t::moveBy(TestFixture::speed_slow, 0U);
-    TestFixture::Interrupt::loopUntilStopped(1);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_0steps_slow_ccw) {
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(nullptr)).Times(1);
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(0);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(_)).Times(0);
-
-    TestFixture::stepper_t::moveBy(-TestFixture::speed_slow, 0);
-    TestFixture::Interrupt::loopUntilStopped(1);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_1step_slow_cw) {
-    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval)).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
-
-    TestFixture::stepper_t::moveBy(TestFixture::speed_slow, 1);
-
-    TestFixture::Interrupt::loopUntilStopped(1);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_1step_slow_ccw) {
-    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval)).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(false)).Times(1);
-
-    TestFixture::stepper_t::moveBy(-TestFixture::speed_slow, 1);
-
-    TestFixture::Interrupt::loopUntilStopped(1);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_360deg_slow_cw) {
-    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) / TestFixture::stepper_t::ANGLE_PER_STEP);
-    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(2);
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval)).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
-
-    TestFixture::stepper_t::moveBy(TestFixture::speed_slow, Angle::deg(360.0f));
-
-    TestFixture::Interrupt::loopUntilStopped(expected_steps);
-
-    EXPECT_EQ(TestFixture::stepper_t::position().mrad_u32(), Angle::deg(360.0f).mrad_u32());
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_360deg_slow_ccw) {
-    constexpr auto expected_steps = TestFixture::Driver::SPR;
-    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval)).Times(1);
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(false)).Times(1);
-
-    TestFixture::stepper_t::moveBy(-TestFixture::speed_slow, Angle::deg(360.0f));
-
-    TestFixture::Interrupt::loopUntilStopped(expected_steps);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_360deg_max_cw) {
-    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
-                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
-    constexpr auto expected_speed = TestFixture::speed_max;
-    constexpr uint32_t expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(expected_speed.rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
+TEST_P(StepperStopTest, stop) {
+    const auto p = GetParam();
+    prepareSpeed(p.initial_speed);
 
     {
         InSequence s;
 
-        for (size_t i = 1; i < TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT; i++) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
+        // interrupt will be stopped immediately after/on calling Stepper::stop()
+        EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
+
+        if (p.expect_decel_stairs > 0) {
+            for (uint16_t stair = GetParam().expect_decel_stairs; stair > 0; stair--) {
+                const uint32_t interval = Ramp::REAL_TYPE::interval(stair);
+                EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
+                EXPECT_CALL(*Driver::mock, step()).Times(Ramp::STEPS_PER_STAIR).RetiresOnSaturation();
+            }
         }
 
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval));
-
-        for (size_t i = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT - 1; i > 0; i--) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
-        }
+        EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
     }
 
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
+    // TODO: assert position
 
-    TestFixture::stepper_t::moveBy(TestFixture::speed_max, Angle::deg(360.0f));
-
-    TestFixture::Interrupt::loopUntilStopped(expected_steps * 2);
+    TestStepper::stop();
+    Interrupt::loopUntilStopped(GetParam().expect_steps());
 }
 
-TYPED_TEST(StepperTest, moveBy_idle_360deg_max_ccw) {
-    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
-                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
-    constexpr uint32_t expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
-            TestFixture::speed_max.rad());
+INSTANTIATE_TEST_SUITE_P(
+        StepperTest,
+        StepperStopTest,
+        testing::Values(
+                StepperStopTestParams(
+                        "idle",
+                        Angle::deg(0),
+                        0
+                ),
+                StepperStopTestParams(
+                        "tracking_cw",
+                        TRACKING_SPEED,
+                        0
+                ),
+                StepperStopTestParams(
+                        "tracking_ccw",
+                        -TRACKING_SPEED,
+                        0
+                ),
+                StepperStopTestParams(
+                        "slewing_cw",
+                        SLEWING_SPEED,
+                        Ramp::STAIRS_COUNT - 1
+                ),
+                StepperStopTestParams(
+                        "slewing_ccw",
+                        -SLEWING_SPEED,
+                        Ramp::STAIRS_COUNT - 1
+                )
+        ),
+        [=](const TestParamInfo<StepperStopTestParams> &i) {
+            return i.param.name;
+        }
+);
 
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
+struct StepperMoveTestParams {
+
+    using GtestTuple = std::tuple<NamedValue<Angle>, NamedValue<Angle>, uint32_t>;
+
+//    StepperMoveTestParams(
+////            std::string name,
+//            Angle initial_speed,
+//            Angle run_speed,
+//            uint32_t steps,
+//            Movement expect) :
+////            name(std::move(name)),
+//            initial_speed(initial_speed),
+//            run_speed(run_speed),
+//            steps(steps),
+//            expect(expect) {}
+
+    explicit StepperMoveTestParams(const GtestTuple &tuple)
+            : initial_speed(std::get<0>(tuple).value),
+              run_speed(std::get<1>(tuple).value),
+              steps(std::get<2>(tuple))
+//              expect(Movement(0, 0, 0, 0, 0))
+    {}
+
+//    std::string name;
+    Angle initial_speed;
+    Angle run_speed;
+    uint32_t steps;
+//    Movement expect;
+
+    [[nodiscard]] Movement expect() const {
+        using RealRamp = Ramp::REAL_TYPE;
+        uint16_t initial_ramp_stair = RealRamp::maxAccelStairs(initial_speed.rad());
+        uint16_t requested_ramp_stair = RealRamp::maxAccelStairs(run_speed.rad());
+
+//        int32_t pos_after_instant_stop =
+        int32_t total_steps = static_cast<int32_t>(steps) - (initial_ramp_stair * RealRamp::STEPS_PER_STAIR);
+
+        // pre-deceleration is needed if ...
+        // 1. requested speed is at a lower ramp stair
+        // 2. requested run direction differs from current one AND current stair is greater than 0
+        // 3. compensation movement is needed
+        uint16_t pre_decel_stairs = 0;
+//        if (signbit(initial_speed.rad()) != signbit(run_speed.rad()) &&) {
+//
+//        }
+
+        return {
+                0,
+                0,
+                0,
+                0,
+                0
+        };
+    }
+};
+
+using StepperMoveByTest = StepperTest<StepperMoveTestParams::GtestTuple>;
+
+TEST_P(StepperMoveByTest, moveBy) {
+    const StepperMoveTestParams &p = StepperMoveTestParams(GetParam());
+
+    prepareSpeed(p.initial_speed);
+    auto current_stair = Ramp::maxAccelStairs(p.initial_speed.rad());
+
+    EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+    EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+    EXPECT_CALL(*Driver::mock, dir(_)).Times(AnyNumber());
 
     {
-        InSequence s;
+        InSequence seq;
 
-        for (size_t i = 1; i < TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT; i++) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
-        }
+//        // interrupt will be stopped immediately after/on calling Stepper::stop()
+        EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
+//
+//        if (p.expect.pre_decel_stairs > 0) {
+//            for (uint16_t s = 0; s < p.expect.pre_decel_stairs; s--) {
+//                const uint32_t interval = Ramp::REAL_TYPE::interval(--current_stair);
+//                EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
+//                EXPECT_CALL(*Driver::mock, step()).Times(Ramp::STEPS_PER_STAIR).RetiresOnSaturation();
+//            }
+//        }
+//
+//        if (p.steps > 0) {
+//            EXPECT_CALL(*Driver::mock, dir(_)).RetiresOnSaturation();
+//        }
+//
+//        // TODO: handle direction change
+//        if (p.expect.accel_stairs > 0) {
+//            for (uint16_t s = 0; s < p.expect.accel_stairs; s++) {
+//                const uint32_t interval = Ramp::REAL_TYPE::interval(++current_stair);
+//                EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
+//                EXPECT_CALL(*Driver::mock, step()).Times(Ramp::STEPS_PER_STAIR).RetiresOnSaturation();
+//            }
+//        }
+//
+//        if (p.expect.run_steps > 0) {
+//            EXPECT_CALL(*Interrupt::mock, setInterval(p.expect.run_interval)).RetiresOnSaturation();
+//            EXPECT_CALL(*Driver::mock, step()).Times(static_cast<int>(p.expect.run_steps)).RetiresOnSaturation();
+//        }
+//
+//        if (p.expect.decel_stairs > 0) {
+//            for (uint16_t s = 0; s < p.expect.decel_stairs; s++) {
+//                const uint32_t interval = Ramp::REAL_TYPE::interval(current_stair--);
+//                EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
+//                EXPECT_CALL(*Driver::mock, step()).Times(Ramp::STEPS_PER_STAIR).RetiresOnSaturation();
+//            }
+//        }
 
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval));
-
-        for (size_t i = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT - 1; i > 0; i--) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
-        }
+        EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
     }
 
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(false)).Times(1);
+    auto sign = [](float x) {
+        return (x < 0) ? -1 : 1;
+    };
+    const int32_t initial_pos = TestStepper::getPosition();
+    const auto expected_pos = initial_pos + (sign(p.run_speed.rad()) * static_cast<int32_t>(p.steps));
 
-    TestFixture::stepper_t::moveBy(-TestFixture::speed_max, Angle::deg(360.0f));
+    TestStepper::moveBy(p.run_speed, p.steps);
+    constexpr uint32_t reverse_steps =
+            2 * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR);
+    Interrupt::loopUntilStopped(p.steps + reverse_steps);
 
-    TestFixture::Interrupt::loopUntilStopped(expected_steps);
+    ASSERT_EQ(expected_pos, TestStepper::getPosition());
 }
 
-TYPED_TEST(StepperTest, moveBy_idle_360deg_2max_cw) {
-    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) / TestFixture::stepper_t::ANGLE_PER_STEP);
-    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
-            (2.0f * TestFixture::speed_max).rad());
+//static std::vector<StepperMoveTestParams> moveByParams() {
+//    std::vector<StepperMoveTestParams> params;
+//
+//    params.emplace_back(
+//            StepperMoveTestParams(
+//                    "atMaxSpeedCW_by0Steps_whileIdle",
+//                    Angle::deg(0),
+//                    SLEWING_SPEED,
+//                    0,
+//                    Movement(0, 0, 0, 0, 0)
+//            )
+//    );
+//    return params;
+//}
 
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
+std::vector<NamedValue<Angle>> initialSpeeds = {
+        NamedValue("Idle", Angle::deg(0)),
+        NamedValue("TrackingCW", TRACKING_SPEED),
+        NamedValue("TrackingCCW", -TRACKING_SPEED),
+        NamedValue("SlewingCW", SLEWING_SPEED),
+        NamedValue("SlewingCCW", -SLEWING_SPEED),
+};
 
-    {
-        InSequence s;
+std::vector<NamedValue<Angle>> runSpeeds = {
+        NamedValue("TrackingCW", TRACKING_SPEED),
+        NamedValue("TrackingCCW", -TRACKING_SPEED),
+        NamedValue("SlewingCW", SLEWING_SPEED),
+        NamedValue("SlewingCCW", -SLEWING_SPEED),
+};
 
-        for (size_t i = 1; i < TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT; i++) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
+std::vector<uint32_t> steps = {
+        0,
+        1,
+        Ramp::STEPS_PER_STAIR * (Ramp::STAIRS_COUNT - 1) / 2,
+        Ramp::STEPS_PER_STAIR * (Ramp::STAIRS_COUNT - 1),
+        Ramp::STEPS_PER_STAIR * (Ramp::STAIRS_COUNT - 1) + 1,
+        Ramp::STEPS_PER_STAIR * (Ramp::STAIRS_COUNT - 1) * 2,
+};
+
+INSTANTIATE_TEST_SUITE_P(
+        StepperTest,
+        StepperMoveByTest,
+        testing::Combine(
+                testing::ValuesIn(initialSpeeds),
+                testing::ValuesIn(runSpeeds),
+                testing::ValuesIn(steps)
+        ),
+//        testing::ValuesIn(moveByParams()),
+//        testing::Values(
+//                StepperMoveTestParams(
+//                        "atMaxSpeedCW_by0Steps_whileIdle",
+//                        Angle::deg(0),
+//                        SLEWING_SPEED,
+//                        0,
+//                        Movement(0, 0, 0, 0, 0)
+//                ),
+//                StepperMoveTestParams(
+//                        "atMaxSpeedCW_by1step_whileIdle",
+//                        Angle::deg(0),
+//                        SLEWING_SPEED,
+//                        1,
+//                        Movement(0, 0, 1, Ramp::REAL_TYPE::interval(1), 0)
+//                ),
+//                StepperMoveTestParams(
+//                        "atMaxSpeedCW_by65steps_whileIdle",
+//                        Angle::deg(0),
+//                        SLEWING_SPEED,
+//                        Ramp::REAL_TYPE::STEPS_PER_STAIR * 2 + 1,
+//                        Movement(
+//                                0,
+//                                1,
+//                                1,
+//                                Ramp::REAL_TYPE::interval(1),
+//                                1
+//                        )
+//                )
+//        ),
+        [=](const TestParamInfo<StepperMoveTestParams::GtestTuple> &i) {
+//            const StepperMoveTestParams &p = StepperMoveTestParams(i.param);
+            return "while" + std::get<0>(i.param).name + "_move"
+                   + "_at" + std::get<1>(i.param).name
+                   + "_by" + std::to_string(std::get<2>(i.param)) + "Steps";
         }
+);
 
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval));
-
-        for (size_t i = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT - 1; i > 0; i--) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i)));
-        }
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
-
-    TestFixture::stepper_t::moveBy(2.0f * TestFixture::speed_max, Angle::deg(360.0f));
-
-    TestFixture::Interrupt::loopUntilStopped(expected_steps);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_360deg_2max_ccw) {
-    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
-                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
-    constexpr uint32_t expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
-            (2.0f * TestFixture::speed_max).rad());
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AtLeast(1));
-
-    {
-        InSequence s;
-
-        for (size_t i = 1; i < TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT; i++) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i))).Times(1);
-        }
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(expected_interval));
-
-        for (size_t i = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT - 1; i > 0; i--) {
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(TestFixture::Ramp::REAL_TYPE::interval(i))).Times(1);
-        }
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(expected_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(false)).Times(1);
-
-    TestFixture::stepper_t::moveBy(-2.0f * TestFixture::speed_max, Angle::deg(360.0f));
-
-    TestFixture::Interrupt::loopUntilStopped(expected_steps);
-}
-
-TYPED_TEST(StepperTest, moveBy_idle_short_cw_max) {
-    constexpr uint32_t stairs = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT / 2;
-    constexpr uint32_t accel_steps = stairs * TestFixture::Ramp::REAL_TYPE::STEPS_PER_STAIR;
-    constexpr uint32_t run_steps = TestFixture::Ramp::REAL_TYPE::STEPS_PER_STAIR / 2;
-
-    constexpr uint32_t test_steps = accel_steps * 2 + run_steps;
-    constexpr auto test_speed = TestFixture::speed_max;
-
-    {
-        InSequence s;
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(1).RetiresOnSaturation();
-
-        // acceleration
-        for (size_t i = 1; i <= stairs; i++) {
-            uint32_t interval = TestFixture::Ramp::REAL_TYPE::interval(i);
-
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
-        }
-
-        // run
-        uint32_t run_interval = TestFixture::Ramp::REAL_TYPE::interval(stairs);
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(run_interval)).RetiresOnSaturation();
-
-        // deceleration
-        for (size_t i = stairs; i > 0; i--) {
-            uint32_t interval = TestFixture::Ramp::REAL_TYPE::interval(i);
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
-        }
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(1).RetiresOnSaturation();
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(test_steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
-
-    TestFixture::stepper_t::moveBy(test_speed, test_steps);
-
-    TestFixture::Interrupt::loopUntilStopped(test_steps);
-}
-
-TYPED_TEST(StepperTest, moveBy_runningAtMaxCw_slowCw) {
-    const auto speed_before = TestFixture::speed_max;
-    const auto stair_before = TestFixture::Ramp::REAL_TYPE::maxAccelStairs(speed_before.rad());
-
-    TestFixture::prepareSpeed(speed_before);
-
-    const auto speed_test = TestFixture::speed_slow;
-    const uint32_t steps = (stair_before * TestFixture::Ramp::STEPS_PER_STAIR) + 100;
-
-    {
-        InSequence s;
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-
-        // pre-deceleration
-        for (size_t stair = stair_before; stair > 0; stair--) {
-            uint32_t interval = TestFixture::Ramp::REAL_TYPE::interval(stair);
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
-        }
-
-        // run
-        uint32_t run_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(speed_test.rad());
-        EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(run_interval)).RetiresOnSaturation();
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(steps);
-    EXPECT_CALL(*TestFixture::Driver::mock, dir(true));
-
-    TestFixture::stepper_t::moveBy(speed_test, steps);
-    TestFixture::Interrupt::loopUntilStopped(steps);
-}
-
-TYPED_TEST(StepperTest, stop_runningSlowCw) {
-    TestFixture::prepareSpeed(TestFixture::speed_slow);
-
-    {
-        InSequence s;
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(0);
-
-    TestFixture::stepper_t::stop();
-}
-
-TYPED_TEST(StepperTest, stop_runningMaxCw) {
-    TestFixture::prepareSpeed(TestFixture::speed_max);
-
-    const uint32_t steps = static_cast<uint32_t>(TestFixture::Ramp::STAIRS_COUNT - 1) * static_cast<uint32_t>(TestFixture::Ramp::STEPS_PER_STAIR);
-
-    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
-
-    {
-        InSequence s;
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-
-        for (size_t stair = TestFixture::Ramp::STAIRS_COUNT - 1; stair > 0; stair--) {
-            const uint32_t interval = TestFixture::Ramp::REAL_TYPE::interval(stair);
-            EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
-        }
-
-        EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).RetiresOnSaturation();
-    }
-
-    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(steps);
-
-    TestFixture::stepper_t::stop();
-    TestFixture::Interrupt::loopUntilStopped(steps, false);
-}
-
-// TYPED_TEST(StepperTest, FullRamp_CCW_WhileSlowMovement)
-// {
-//     TestFixture::Ramp::delegateToReal();
-//     TestFixture::Ramp::expectLimits();
-
-//     constexpr auto TRACKING_STEPS = 100;
-
-//     constexpr auto DISTANCE = SLEWING_SPEED * 2;
-//     constexpr auto SLEWING_STEPS = static_cast<uint32_t>(DISTANCE / STEP_ANGLE + 0.5);
-
-//     EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(_)).Times(AnyNumber());
-//     EXPECT_CALL(*TestFixture::Interrupt::mock, setInterval(0)).Times(0);
-
-//     EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(TRACKING_STEPS);
-//     EXPECT_CALL(*TestFixture::Driver::mock, dir(true)).Times(1);
-
-//     TestFixture::stepper_t::moveBy(TRACKING_SPEED, UINT32_MAX);
-
-//     TestFixture::Interrupt::loop(TRACKING_STEPS);
-
-//     Mock::VerifyAndClearExpectations(TestFixture::Driver::mock);
-
-//     EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(SLEWING_STEPS);
-//     EXPECT_CALL(*TestFixture::Driver::mock, dir(false)).Times(1);
-
-//     TestFixture::stepper_t::moveBy(-SLEWING_SPEED + TRACKING_SPEED, DISTANCE);
-
-//     TestFixture::Interrupt::loopUntilStopped();
-// }
+//
+//#include <vector>
+//#include <tuple>
+//
+//#include "Angle.h"
+//#include "gmocks/MockedIntervalInterrupt.h"
+//#include "gmocks/MockedDriver.h"
+//#include "gmocks/MockedAccelerationRamp.h"
+//
+//template<typename T_Interrupt, typename T_Driver, typename T_Ramp>
+//struct FixtureParams {
+//    using Interrupt = T_Interrupt;
+//    using Driver = T_Driver;
+//    using Ramp = T_Ramp;
+//
+//    std::vector<Angle> speed_before;
+//};
+//
+//constexpr auto SPR = 400UL * 256UL;
+//constexpr auto TRANSMISSION = 35.46611505122143f;
+//constexpr auto TRACKING_SPEED = Angle::deg(360.0f) / 86164.0905f;
+//constexpr auto SLEWING_SPEED = TRANSMISSION * Angle::deg(2.0f);
+//constexpr auto ACCELERATION = TRANSMISSION * Angle::deg(4.0f);
+//
+//using OatRAInterrupt = MockedIntervalInterrupt<0>;
+//using OatRADriver = MockedDriver<SPR>;
+//using OatRARamp = MockedAccelerationRamp<256, F_CPU, SPR, SLEWING_SPEED.mrad_u32(), ACCELERATION.mrad_u32()>;
+//using OatRaFixture = FixtureParams<OatRAInterrupt, OatRADriver, OatRARamp>;
+//
+//using TestTypes = ::testing::Types<OatRaFixture>;
+//
+//static std::tuple<OatRaFixture> allParams{
+//        {
+//                .speed_before = {
+//                        Angle::rad(0.0f),
+//                        TRACKING_SPEED,
+//                        SLEWING_SPEED
+//                }
+//        },
+//};
+//
+//template<typename T>
+//struct StopTest : public testing::Test {
+//    StopTest() : params{std::get<T>(allParams)} {}
+//
+//    T params;
+//};
+//
+//TYPED_TEST_SUITE_P(StopTest);
+//
+//TYPED_TEST_P(StopTest, stop) {
+//    for (auto const &speed: this->params.speed_before) {
+//
+//    }
+//}
+//
+//REGISTER_TYPED_TEST_SUITE_P(StopTest, stop);
+//
+//INSTANTIATE_TYPED_TEST_SUITE_P(TestPrefix, StopTest, TestTypes);

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="CMakePresetLoader">{
   &quot;useNewFormat&quot;: true
 }</component>
@@ -18,21 +21,18 @@
   <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="Debug-Coverage" ENABLED="true" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="20995ce1-c457-4047-8928-6bb170770d7e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/avr-interrupt-stepper.iml" beforeDir="false" />
+    <list default="true" id="20995ce1-c457-4047-8928-6bb170770d7e" name="Changes" comment="adapted test code to 16 bit stairs vector of the ramp">
+      <change afterPath="$PROJECT_DIR$/test/test_desktop/StepperTest_old.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/oat/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/examples/oat/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/IntervalInterrupt.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/IntervalInterrupt.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/IntervalInterrupt_AVR.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/IntervalInterrupt_AVR.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/Stepper.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/Stepper.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_desktop/AccelerationRampTest.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/AccelerationRampTest.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/test/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/test_desktop/StepperTest.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/StepperTest.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedIntervalInterrupt.h" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedIntervalInterrupt.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedAccelerationRamp.h" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedAccelerationRamp.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,7 +42,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug-Coverage" />
   <component name="ExportTestResults" outputFolder="$PROJECT_DIR$" userTempatePath="" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -63,6 +63,7 @@
     <option name="minorVersion" value="2.3" />
   </component>
   <component name="ProjectId" id="2F2lrawBYQR2JboJaJoFvW7MIll" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -77,7 +78,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/andre/repos/avr-interrupt-stepper&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -86,13 +87,31 @@
     </key>
   </component>
   <component name="RunManager" selected="Google Test.native_test">
-    <configuration name="AccelerationRampTest.STAIRS_COUNT" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_CLASS="AccelerationRampTest" TEST_METHOD="STAIRS_COUNT" TEST_MODE="SUITE_TEST">
+    <configuration name="StepperTest-StepperMoveByTest.moveBy" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/StepperMoveByTest.moveBy/*:StepperTest/StepperMoveByTest/*.moveBy" TEST_MODE="PATTERN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
         <option name="BeforeTestRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="StepperTest.moveBy_short_cw_max[OAT_RA]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest.moveBy_short_cw_max:StepperTest/OAT_RA.moveBy_short_cw_max:StepperTest.moveBy_short_cw_max/OAT_RA:*/StepperTest.moveBy_short_cw_max/*:*/StepperTest/*.moveBy_short_cw_max" TEST_MODE="PATTERN">
+    <configuration name="StepperTest-StepperMoveByTest.moveBy[whileSlewingCCW_move_atSlewingCCW_by32640Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/StepperMoveByTest.moveBy/whileSlewingCCW_move_atSlewingCCW_by32640Steps:StepperTest/StepperMoveByTest/whileSlewingCCW_move_atSlewingCCW_by32640Steps.moveBy" TEST_MODE="PATTERN">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by32641Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/StepperMoveByTest.moveBy/whileSlewingCW_move_atSlewingCCW_by32641Steps:StepperTest/StepperMoveByTest/whileSlewingCW_move_atSlewingCCW_by32641Steps.moveBy" TEST_MODE="PATTERN">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by65280Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/StepperMoveByTest.moveBy/whileSlewingCW_move_atSlewingCCW_by65280Steps:StepperTest/StepperMoveByTest/whileSlewingCW_move_atSlewingCCW_by65280Steps.moveBy" TEST_MODE="PATTERN">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCW_by32641Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/StepperMoveByTest.moveBy/whileSlewingCW_move_atSlewingCW_by32641Steps:StepperTest/StepperMoveByTest/whileSlewingCW_move_atSlewingCW_by32641Steps.moveBy" TEST_MODE="PATTERN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
         <option name="BeforeTestRunTask" enabled="true" />
@@ -102,11 +121,6 @@
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
         <option name="BeforeTestRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration name="gmock" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="gmock" CONFIG_NAME="Debug">
@@ -135,13 +149,19 @@
       <item itemvalue="CMake Application.gtest" />
       <item itemvalue="CMake Application.gtest_main" />
       <item itemvalue="Google Test.native_test" />
-      <item itemvalue="Google Test.StepperTest.moveBy_short_cw_max[OAT_RA]" />
-      <item itemvalue="Google Test.AccelerationRampTest.STAIRS_COUNT" />
+      <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy" />
+      <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCCW_move_atSlewingCCW_by32640Steps]" />
+      <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by32641Steps]" />
+      <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by65280Steps]" />
+      <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCW_by32641Steps]" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Google Test.StepperTest.moveBy_short_cw_max[OAT_RA]" />
-        <item itemvalue="Google Test.AccelerationRampTest.STAIRS_COUNT" />
+        <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy" />
+        <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCCW_move_atSlewingCCW_by32640Steps]" />
+        <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by65280Steps]" />
+        <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCCW_by32641Steps]" />
+        <item itemvalue="Google Test.StepperTest-StepperMoveByTest.moveBy[whileSlewingCW_move_atSlewingCW_by32641Steps]" />
       </list>
     </recent_temporary>
   </component>
@@ -156,7 +176,51 @@
       <workItem from="1663698260066" duration="17000" />
       <workItem from="1664817933902" duration="12963000" />
       <workItem from="1664908382746" duration="2942000" />
+      <workItem from="1666299119082" duration="4163000" />
+      <workItem from="1666368787213" duration="9413000" />
+      <workItem from="1666428527091" duration="392000" />
+      <workItem from="1666462583581" duration="8874000" />
+      <workItem from="1666519300522" duration="2153000" />
+      <workItem from="1666528621297" duration="4499000" />
+      <workItem from="1666538044607" duration="2139000" />
+      <workItem from="1666545444527" duration="9904000" />
+      <workItem from="1666632368778" duration="601000" />
+      <workItem from="1666635452727" duration="11455000" />
+      <workItem from="1666718355531" duration="8819000" />
+      <workItem from="1666730628872" duration="4794000" />
+      <workItem from="1666806770744" duration="7482000" />
+      <workItem from="1666893335943" duration="3246000" />
+      <workItem from="1666978951123" duration="9984000" />
+      <workItem from="1667041479546" duration="1031000" />
+      <workItem from="1667066696063" duration="1557000" />
+      <workItem from="1667159752077" duration="8180000" />
+      <workItem from="1667422829809" duration="1066000" />
+      <workItem from="1667594393799" duration="7319000" />
+      <workItem from="1667670944687" duration="12480000" />
+      <workItem from="1667758740677" duration="12998000" />
+      <workItem from="1667846580621" duration="6953000" />
+      <workItem from="1667940078570" duration="3197000" />
+      <workItem from="1668030879175" duration="599000" />
+      <workItem from="1668033051279" duration="1686000" />
+      <workItem from="1668092621538" duration="1205000" />
+      <workItem from="1668106396328" duration="4541000" />
+      <workItem from="1668191513531" duration="12741000" />
     </task>
+    <task id="LOCAL-00001" summary="removed unused code after multistep change">
+      <created>1667156369134</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1667156369134</updated>
+    </task>
+    <task id="LOCAL-00002" summary="adapted test code to 16 bit stairs vector of the ramp">
+      <created>1667159861215</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1667159861215</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -173,20 +237,49 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="removed unused code after multistep change" />
+    <MESSAGE value="adapted test code to 16 bit stairs vector of the ramp" />
+    <option name="LAST_COMMIT_MESSAGE" value="adapted test code to 16 bit stairs vector of the ramp" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/test/test_desktop/gmocks/MockedIntervalInterrupt.h</url>
-          <line>52</line>
-          <option name="timeStamp" value="9" />
+          <url>file://$PROJECT_DIR$/include/Stepper.h</url>
+          <line>98</line>
+          <option name="timeStamp" value="90" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/include/Stepper.h</url>
-          <line>200</line>
-          <option name="timeStamp" value="10" />
+          <line>85</line>
+          <option name="timeStamp" value="99" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/include/Stepper.h</url>
+          <line>211</line>
+          <option name="timeStamp" value="102" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/include/Stepper.h</url>
+          <line>176</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/include/Stepper.h</url>
+          <line>527</line>
+          <option name="timeStamp" value="108" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <watches-manager>
+      <configuration name="CMakeGoogleTestRunConfigurationType">
+        <watch expression="pos" language="ObjectiveC" />
+        <watch expression="ramp_stair" language="ObjectiveC" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="../../../repos/avr-interrupt-stepper/cmake-build-debug-coverage" NAME="All in StepperTest.cpp Coverage Results" MODIFIED="1666731029936" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="gcov/llvm" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
   </component>
 </project>

@@ -25,8 +25,8 @@ add_executable(
         #test_desktop/main.cpp
         test_desktop/AccelerationRampTest.cpp
         test_desktop/DriverTest.cpp
-        test_desktop/StepperTest.cpp
-)
+        test_desktop/StepperTest_old.cpp
+        test_desktop/StepperTest.cpp)
 
 target_compile_definitions(native_test PUBLIC F_CPU=16000000)
 

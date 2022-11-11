@@ -18,13 +18,13 @@ public:
     template <typename T_REAL>
     void delegateToReal()
     {
-        ON_CALL(*this, interval).WillByDefault([this](uint16_t stair)
+        ON_CALL(*this, interval).WillByDefault([](uint16_t stair)
                                                { return T_REAL::interval(stair); });
 
-        ON_CALL(*this, getIntervalForSpeed).WillByDefault([this](float radPerSec)
+        ON_CALL(*this, getIntervalForSpeed).WillByDefault([](float radPerSec)
                                                           { return T_REAL::getIntervalForSpeed(radPerSec); });
 
-        ON_CALL(*this, maxAccelStairs).WillByDefault([this](float radPerSec)
+        ON_CALL(*this, maxAccelStairs).WillByDefault([](float radPerSec)
                                                      { return T_REAL::maxAccelStairs(radPerSec); });
     }
 
@@ -71,7 +71,7 @@ struct MockedAccelerationRamp
         return mock->getIntervalForSpeed(radPerSec);
     }
 
-    static uint8_t maxAccelStairs(float radPerSec)
+    static uint16_t maxAccelStairs(float radPerSec)
     {
         return mock->maxAccelStairs(radPerSec);
     }

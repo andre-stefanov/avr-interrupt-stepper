@@ -185,13 +185,13 @@ public:
     // Overridden for RA in Mount.cpp
     static Angle position()
     {
-        return Config::stepper::position() / Config::TRANSMISSION;
+        return Config::stepper::getPositionAngle() / Config::TRANSMISSION;
     }
 
     // Overridden for RA in Mount.cpp
     static void setPosition(Angle value)
     {
-        Config::stepper::position(transmit(value));
+        Config::stepper::setPositionAngle(transmit(value));
     }
 
     // Overridden for RA in Mount.cpp

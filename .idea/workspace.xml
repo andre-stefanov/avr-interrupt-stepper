@@ -25,14 +25,12 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="20995ce1-c457-4047-8928-6bb170770d7e" name="Changes" comment="adapted test code to 16 bit stairs vector of the ramp">
-      <change afterPath="$PROJECT_DIR$/test/test_desktop/StepperTest_old.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="20995ce1-c457-4047-8928-6bb170770d7e" name="Changes" comment="extended testing a lot and fixed several issues">
+      <change afterPath="$PROJECT_DIR$/include/InterruptAccelStepper.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/oat/Axis.h" beforeDir="false" afterPath="$PROJECT_DIR$/examples/oat/Axis.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/oat/Configuration.h" beforeDir="false" afterPath="$PROJECT_DIR$/examples/oat/Configuration.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/Stepper.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/Stepper.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/test/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_desktop/StepperTest.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/StepperTest.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedAccelerationRamp.h" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_desktop/gmocks/MockedAccelerationRamp.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -204,7 +202,10 @@
       <workItem from="1668033051279" duration="1686000" />
       <workItem from="1668092621538" duration="1205000" />
       <workItem from="1668106396328" duration="4541000" />
-      <workItem from="1668191513531" duration="12741000" />
+      <workItem from="1668191513531" duration="12852000" />
+      <workItem from="1668281531177" duration="4097000" />
+      <workItem from="1668289247431" duration="2476000" />
+      <workItem from="1668341905116" duration="4000" />
     </task>
     <task id="LOCAL-00001" summary="removed unused code after multistep change">
       <created>1667156369134</created>
@@ -220,7 +221,14 @@
       <option name="project" value="LOCAL" />
       <updated>1667159861215</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="extended testing a lot and fixed several issues">
+      <created>1668207723424</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1668207723424</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -240,7 +248,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="removed unused code after multistep change" />
     <MESSAGE value="adapted test code to 16 bit stairs vector of the ramp" />
-    <option name="LAST_COMMIT_MESSAGE" value="adapted test code to 16 bit stairs vector of the ramp" />
+    <MESSAGE value="extended testing a lot and fixed several issues" />
+    <option name="LAST_COMMIT_MESSAGE" value="extended testing a lot and fixed several issues" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -267,7 +276,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/include/Stepper.h</url>
-          <line>527</line>
+          <line>557</line>
           <option name="timeStamp" value="108" />
         </line-breakpoint>
       </breakpoints>

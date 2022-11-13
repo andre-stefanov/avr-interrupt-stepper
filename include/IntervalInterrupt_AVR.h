@@ -298,6 +298,6 @@ template <Timer T>
 volatile timer_callback IntervalInterrupt_AVR<T>::callback = nullptr;
 
 template <Timer T>
-const unsigned long int IntervalInterrupt<T>::FREQ = F_CPU;
+const uint32_t IntervalInterrupt<T>::FREQ = F_CPU;
 
 #endif

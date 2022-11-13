@@ -18,8 +18,9 @@
 #define interrupts() do {} while(0)
 #endif
 
-#include "AccelerationRamp.h"
 #include "etl/delegate.h"
+
+#include "AccelerationRamp.h"
 #include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #include <math.h> // NOLINT(modernize-deprecated-headers)
 #include "Angle.h"
@@ -332,6 +333,36 @@ public:
         noInterrupts();
         pos = new_pos;
         interrupts();
+    }
+
+    static uint32_t distanceToGo()
+    {
+        noInterrupts();
+        const uint16_t pre_decel_stairs = pre_decel_stairs_left;
+        const uint16_t accel_stairs = pre_decel_stairs_left;
+        const uint32_t run_rest_blocks = run_full_blocks_left;
+        const uint8_t run_rest_block = run_rest_block_steps;
+        const uint32_t run_steps = run_steps_left;
+        const uint16_t cur_ramp_stair = ramp_stair;
+        interrupts();
+
+        const uint16_t decel_stairs = cur_ramp_stair - pre_decel_stairs + accel_stairs;
+
+        uint32_t steps_left = 0;
+        // pre-decel steps
+        steps_left += static_cast<uint32_t>(pre_decel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
+        // accel steps
+        steps_left += static_cast<uint32_t>(accel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
+        // run blocks steps
+        steps_left += static_cast<uint32_t>(run_rest_blocks) * static_cast<uint32_t>(RUN_BLOCK_SIZE);
+        // run rest block steps
+        steps_left += run_rest_block;
+        // run slow steps
+        steps_left += run_steps;
+        // decel steps
+        steps_left += static_cast<uint32_t>(decel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
+
+        return steps_left;
     }
 
     static bool isRunning()

@@ -13,7 +13,7 @@ class IntervalInterrupt
 public:
     IntervalInterrupt() = delete;
 
-    const static unsigned long int FREQ;
+    const static uint32_t FREQ;
 
     static void init();
 

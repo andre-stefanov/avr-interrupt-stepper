@@ -16,8 +16,8 @@
 
 #define DEC_STEPPER_SPR (400UL * 256UL)
 #define DEC_TRANSMISSION 17.70597411692611f
-#define DEC_SLEWING_SPEED 2.0f        // deg/s
-#define DEC_SLEWING_ACCELERATION 4.0f // deg/s/s
+#define DEC_SLEWING_SPEED 8.0f        // deg/s
+#define DEC_SLEWING_ACCELERATION 8.0f // deg/s/s
 #define DEC_GUIDING_SPEED 0.5f        // fraction of sidereal speed to add/substract to/from tracking speed
 #define DEC_DRIVER_INVERT_STEP false
 
@@ -69,7 +69,7 @@ namespace config
 
         using interrupt = IntervalInterrupt<TIMER_DEC>;
         using driver = Driver<SPR, pin_step, pin_dir, DEC_DRIVER_INVERT_STEP>;
-        using ramp = AccelerationRamp<64, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
+        using ramp = AccelerationRamp<256, interrupt::FREQ, driver::SPR, (SPEED_SLEWING * TRANSMISSION).mrad_u32(), (ACCELERATION * TRANSMISSION).mrad_u32()>;
         using stepper = Stepper<interrupt, driver, ramp>;
     };
 }

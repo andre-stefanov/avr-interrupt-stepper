@@ -34,7 +34,7 @@ template <Timer T>
 etl::delegate<void()> IntervalInterrupt_Delegate<T>::stop = etl::delegate<void()>();
 
 template <Timer T>
-const unsigned long int IntervalInterrupt<T>::FREQ = F_CPU;
+const uint32_t IntervalInterrupt<T>::FREQ = F_CPU;
 
 template <Timer T>
 void IntervalInterrupt<T>::init()

@@ -364,7 +364,7 @@ void inline __attribute__((always_inline)) Pin<PIN>::pulse()
 template <uint8_t PIN>
 void inline __attribute__((always_inline)) Pin<PIN>::high()
 {
-    *internal::port_to_output<internal::pin_to_port<PIN>()>() = internal::pin_to_mask<PIN>();
+    *internal::port_to_output<internal::pin_to_port<PIN>()>() |= internal::pin_to_mask<PIN>();
 }
 
 template <uint8_t PIN>

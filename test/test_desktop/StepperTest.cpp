@@ -9,6 +9,8 @@
 #include "gmocks/MockedAccelerationRamp.h"
 #include "Stepper.h"
 
+#define SIGN(x) ((x >= 0) ? 1 : -1)
+
 constexpr auto SPR = 400UL * 256UL;
 constexpr auto TRANSMISSION = 35.46611505122143f;
 constexpr auto TRACKING_SPEED = Angle::deg(360.0f) / 86164.0905f;
@@ -271,10 +273,10 @@ TEST_P(StepperMoveByTest, moveBy) {
 //                EXPECT_CALL(*Driver::mock, step()).Times(Ramp::STEPS_PER_STAIR).RetiresOnSaturation();
 //            }
 //        }
-//
-//        if (p.steps > 0) {
-//            EXPECT_CALL(*Driver::mock, dir(_)).RetiresOnSaturation();
-//        }
+
+        if (p.steps > 0 && SIGN(p.initial_speed.rad()) != SIGN(p.run_speed.rad())) {
+            EXPECT_CALL(*Driver::mock, dir(_)).RetiresOnSaturation();
+        }
 //
 //        // TODO: handle direction change
 //        if (p.expect.accel_stairs > 0) {

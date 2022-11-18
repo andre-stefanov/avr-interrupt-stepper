@@ -256,6 +256,12 @@ private:
 
 public:
 
+    static void init()
+    {
+        DRIVER::init();
+        INTERRUPT::init();
+    }
+
     /**
      * @brief Stop movement immediately and invoke onComplete interval if set.
      */
@@ -441,6 +447,11 @@ public:
         move(MovementSpec(speed, target - pos), onComplete);
     }
 
+    static void moveTo(const float stepsPerSecond, const int32_t target, StepperCallback onComplete = StepperCallback())
+    {
+        moveTo(ANGLE_PER_STEP * stepsPerSecond, target, onComplete);
+    }
+
     static void moveBy(const Angle speed, const Angle distance, StepperCallback onComplete = StepperCallback())
     {
         move(MovementSpec(speed, distance), onComplete);
@@ -453,7 +464,7 @@ public:
 
     static void moveBy(const float stepsPerSecond, const uint32_t steps, StepperCallback onComplete = StepperCallback())
     {
-        move(MovementSpec(ANGLE_PER_STEP * stepsPerSecond, steps), onComplete);
+        moveBy(ANGLE_PER_STEP * stepsPerSecond, steps, onComplete);
     }
 
     static void move(MovementSpec spec, StepperCallback onComplete = StepperCallback())

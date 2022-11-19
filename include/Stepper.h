@@ -99,7 +99,7 @@ private:
                 // set dir in case this deceleration was a direction change with a slow run speed afterwards
                 cur_dir = run_dir;
                 DRIVER::dir(cur_dir > 0);
-                
+
                 if (run_steps_left > 0)
                 {
                     INTERRUPT::setCallback(run_slow_handler);
@@ -545,7 +545,7 @@ public:
                     // will evaluate to 0 for run_steps == n * RUN_BLOCK_SIZE
                     run_rest_block_steps = static_cast<uint8_t>(abs_run_steps % RUN_BLOCK_SIZE);
 
-                    run_interval = RAMP::interval(spec.run_interval);
+                    run_interval = spec.run_interval;
                     // TODO
                 }
             }

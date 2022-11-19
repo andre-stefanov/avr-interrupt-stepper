@@ -557,7 +557,7 @@ public:
             }
 
             INTERRUPT::setCallback(pre_decelerate_multistep_handler);
-            INTERRUPT::setInterval(ramp_stair);
+            INTERRUPT::setInterval(RAMP::interval(ramp_stair));
         }
         // requested 0 steps and we can stop immediately
         else if (spec.steps == 0)

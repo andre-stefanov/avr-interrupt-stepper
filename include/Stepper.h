@@ -271,6 +271,7 @@ public:
         INTERRUPT::setCallback(nullptr);
 
         run_dir = 0;
+        cur_dir = 0;
         ramp_stair = 0;
 
         run_interval = 0;

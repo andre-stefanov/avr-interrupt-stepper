@@ -24,7 +24,7 @@ void configureRaDriver()
     stepper->en_spreadCycle(0);
     stepper->blank_time(24);
     stepper->semin(0); // disable CoolStep so that current is consistent
-    stepper->microsteps(128);
+    stepper->microsteps(256);
     stepper->intpol(true);
     stepper->TCOOLTHRS(0xFFFFF);
 }
@@ -41,18 +41,20 @@ void setup()
     using axis = config::Ra;
     using ramp = config::Ra::ramp_slew;
     using stepper = axis::stepper_slew;
+
+    stepper::init();
     
     stepper::stop();
-    stepper::moveBy(axis::SPEED_SLEWING, ramp::STEPS_TOTAL * 3);
+    stepper::moveBy(axis::SPEED_SLEWING, ramp::STEPS_TOTAL * 10);
 
-    constexpr auto movement = stepper::MovementSpec::distance(axis::SPEED_SLEWING, ramp::STEPS_TOTAL * 3);
-    Serial.println(movement.run_interval);
+    // constexpr auto movement = stepper::MovementSpec::distance(axis::SPEED_SLEWING, ramp::STEPS_TOTAL * 10);
+    // Serial.println(movement.run_interval);
 
-    Serial.println();
-    for (uint16_t i = 0; i < 255; i++)
-    {
-        Serial.println(ramp::interval(i));
-    }
+    // Serial.println();
+    // for (uint16_t i = 0; i < 255; i++)
+    // {
+    //     Serial.println(ramp::interval(i));
+    // }
     
 }
 

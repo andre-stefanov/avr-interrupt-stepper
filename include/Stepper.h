@@ -19,7 +19,6 @@
 #endif
 
 #include <stdint.h> // NOLINT(modernize-deprecated-headers)
-#include <math.h> // NOLINT(modernize-deprecated-headers)
 
 #include "etl/delegate.h"
 

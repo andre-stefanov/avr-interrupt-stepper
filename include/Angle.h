@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h> // NOLINT(modernize-deprecated-headers)
+#include "math.h" // NOLINT(modernize-deprecated-headers)
 
 class Angle
 {
@@ -71,30 +72,31 @@ public:
         return _rad / x._rad;
     }
 
-    constexpr inline float rad() const
+    [[nodiscard]] constexpr inline float rad() const
     {
         return _rad;
     }
 
-    constexpr float deg() const
+    [[nodiscard]] constexpr float deg() const
     {
         return _rad / 0.017453292519943295769236907684886f;
     }
 
-    constexpr float hour() const
+    [[nodiscard]] constexpr float hour() const
     {
         // deg / 360 x 24
         return _rad * 3.819718748f;
     }
 
-    constexpr float mrad() const
+    [[nodiscard]] constexpr float mrad() const
     {
         return _rad * 1000.0f;
     }
 
-    constexpr uint32_t mrad_u32() const
+    [[nodiscard]] constexpr uint32_t mrad_u32() const
     {
-        return (uint32_t)mrad();
+        auto mr = mrad();
+        return static_cast<uint32_t>((mr > 0.0f) ? mr + 0.5f : mr - 0.5f);
     }
 
     // FACTORIES
@@ -111,7 +113,7 @@ public:
 
     constexpr static Angle mrad_u32(uint32_t value)
     {
-        return rad(value / 1000.0f);
+        return rad(static_cast<float>(value) / 1000.0f);
     }
 };
 

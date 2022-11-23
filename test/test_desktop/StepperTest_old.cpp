@@ -16,7 +16,7 @@
 //};
 //
 //template<typename T_Params>
-//struct StepperTest : public Test {
+//struct StepperMoveByTest : public Test {
 //protected:
 //    void SetUp() override {
 //        Interrupt::mock = new StrictMock<IntervalInterruptMock>();
@@ -33,6 +33,8 @@
 //        delete Interrupt::mock;
 //        delete Driver::mock;
 //        delete Ramp::mock;
+//
+//        stepper_t::reset();
 //    }
 //
 //public:
@@ -91,7 +93,7 @@
 //
 //using TestTypes = ::testing::Types<OatRaFixture>;
 //
-//class StepperTestNames {
+//class StepperMoveByTestNames {
 //public:
 //    template<typename T>
 //    static std::string GetName(int i) {
@@ -106,9 +108,9 @@
 //    }
 //};
 //
-//TYPED_TEST_SUITE(StepperTest, TestTypes, StepperTestNames);
+//TYPED_TEST_SUITE(CartesianStepperTest, TestTypes, StepperMoveByTestNames);
 //
-//TYPED_TEST(StepperTest, moveBy_idle_0steps_slow_cw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_0steps_slow_cw) {
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(nullptr)).Times(1);
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AnyNumber());
 //    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(0);
@@ -118,7 +120,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(1);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_0steps_slow_ccw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_0steps_slow_ccw) {
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(nullptr)).Times(1);
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, stop()).Times(AnyNumber());
 //    EXPECT_CALL(*TestFixture::Driver::mock, step()).Times(0);
@@ -128,7 +130,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(1);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_1step_slow_cw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_1step_slow_cw) {
 //    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
 //
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
@@ -142,7 +144,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(1);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_1step_slow_ccw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_1step_slow_ccw) {
 //    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
 //
 //    EXPECT_CALL(*TestFixture::Interrupt::mock, setCallback(_)).Times(AnyNumber());
@@ -156,7 +158,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(1);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_slow_cw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_slow_cw) {
 //    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) / TestFixture::stepper_t::ANGLE_PER_STEP);
 //    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
 //
@@ -170,10 +172,10 @@
 //
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps);
 //
-//    EXPECT_EQ(TestFixture::stepper_t::position().mrad_u32(), Angle::deg(360.0f).mrad_u32());
+//    EXPECT_EQ(TestFixture::stepper_t::getPositionAngle().mrad_u32(), Angle::deg(360.0f).mrad_u32());
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_slow_ccw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_slow_ccw) {
 //    constexpr auto expected_steps = TestFixture::Driver::SPR;
 //    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(TestFixture::speed_slow.rad());
 //
@@ -188,7 +190,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_max_cw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_max_cw) {
 //    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
 //                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
 //    constexpr auto expected_speed = TestFixture::speed_max;
@@ -219,7 +221,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps * 2);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_max_ccw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_max_ccw) {
 //    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
 //                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
 //    constexpr uint32_t expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
@@ -250,7 +252,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_2max_cw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_2max_cw) {
 //    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) / TestFixture::stepper_t::ANGLE_PER_STEP);
 //    constexpr auto expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
 //            (2.0f * TestFixture::speed_max).rad());
@@ -280,7 +282,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_360deg_2max_ccw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_360deg_2max_ccw) {
 //    constexpr auto expected_steps = static_cast<uint32_t>(Angle::deg(360.0f) /
 //                                                              TestFixture::stepper_t::ANGLE_PER_STEP);
 //    constexpr uint32_t expected_interval = TestFixture::Ramp::REAL_TYPE::getIntervalForSpeed(
@@ -311,7 +313,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(expected_steps);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_idle_short_cw_max) {
+//TYPED_TEST(CartesianStepperTest, moveBy_idle_short_cw_max) {
 //    constexpr uint32_t stairs = TestFixture::Ramp::REAL_TYPE::STAIRS_COUNT / 2;
 //    constexpr uint32_t accel_steps = stairs * TestFixture::Ramp::REAL_TYPE::STEPS_PER_STAIR;
 //    constexpr uint32_t run_steps = TestFixture::Ramp::REAL_TYPE::STEPS_PER_STAIR / 2;
@@ -352,7 +354,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(test_steps);
 //}
 //
-//TYPED_TEST(StepperTest, moveBy_runningAtMaxCw_slowCw) {
+//TYPED_TEST(CartesianStepperTest, moveBy_runningAtMaxCw_slowCw) {
 //    const auto speed_before = TestFixture::speed_max;
 //    const auto stair_before = TestFixture::Ramp::REAL_TYPE::maxAccelStairs(speed_before.rad());
 //
@@ -386,7 +388,7 @@
 //    TestFixture::Interrupt::loopUntilStopped(steps);
 //}
 //
-//TYPED_TEST(StepperTest, stop_whileIdle) {
+//TYPED_TEST(CartesianStepperTest, stop_whileIdle) {
 //    {
 //        InSequence s;
 //
@@ -399,7 +401,7 @@
 //    TestFixture::stepper_t::stop();
 //}
 //
-//TYPED_TEST(StepperTest, stop_runningSlowCw) {
+//TYPED_TEST(CartesianStepperTest, stop_runningSlowCw) {
 //    TestFixture::prepareSpeed(TestFixture::speed_slow);
 //
 //    {
@@ -414,7 +416,7 @@
 //    TestFixture::stepper_t::stop();
 //}
 //
-//TYPED_TEST(StepperTest, stop_runningMaxCw) {
+//TYPED_TEST(CartesianStepperTest, stop_runningMaxCw) {
 //    TestFixture::prepareSpeed(TestFixture::speed_max);
 //
 //    const uint32_t steps = static_cast<uint32_t>(TestFixture::Ramp::STAIRS_COUNT - 1) * static_cast<uint32_t>(TestFixture::Ramp::STEPS_PER_STAIR);

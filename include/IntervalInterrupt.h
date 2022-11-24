@@ -13,6 +13,8 @@ class IntervalInterrupt
 public:
     IntervalInterrupt() = delete;
 
+    constexpr static int ID = static_cast<int>(T);
+
     const static uint32_t FREQ;
 
     static void init();

@@ -585,8 +585,6 @@ public:
             // will evaluate to 0 for run_steps == n * RUN_BLOCK_SIZE
             run_rest_block_steps = static_cast<uint8_t>(abs_run_steps % RUN_BLOCK_SIZE);
 
-            uint32_t x = RAMP::STEPS_PER_STAIR;
-
             INTERRUPT::setCallback(accelerate_multistep_handler);
             INTERRUPT::setInterval(RAMP::interval(++ramp_stair));
         }

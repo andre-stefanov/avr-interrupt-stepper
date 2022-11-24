@@ -557,7 +557,7 @@ public:
                 accel_stairs_left = static_cast<uint16_t>((abs_steps - accel_steps_made) /
                                                           (static_cast<uint32_t>(RAMP::STEPS_PER_STAIR) * 2U));
 
-                if (ramp_stair > 0 && accel_stairs_left > 0) {
+                if (ramp_stair > 0 || accel_stairs_left > 0) {
                     run_interval = RAMP::interval(ramp_stair + accel_stairs_left);
                 } else {
                     run_steps_left = abs_steps;

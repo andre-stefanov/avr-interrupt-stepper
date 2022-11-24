@@ -93,7 +93,7 @@ namespace config
         using pin_step = Pin<DEC_STEP_PIN>;
         using pin_dir = Pin<DEC_DIR_PIN>;
 
-        using interrupt = IntervalInterrupt<Timer::TIMER_3>;
+        using interrupt = IntervalInterrupt<Timer::TIMER_4>;
         using driver = Driver<DRIVER_SPR, pin_step, pin_dir, DEC_DRIVER_INVERT_DIR>;
 
         using ramp_slew = AccelerationRamp<256, interrupt::FREQ, UINT32(SPEED_SLEWING), UINT32(ACCELERATION)>;

@@ -65,19 +65,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;cf.advertisement.text.has.clang-format&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/andre/repos/avr-interrupt-stepper&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "cf.advertisement.text.has.clang-format": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "last_opened_file_path": "/home/andre/repos/avr-interrupt-stepper",
+    "settings.editor.selected.configurable": "preferences.sourceCode.C/C++",
+    "structure.view.defaults.are.configured": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/test/test_desktop/oat" />
@@ -85,19 +86,19 @@
     </key>
   </component>
   <component name="RunManager" selected="Google Test.native_test">
-    <configuration name="AccelerationRampTest.maxAccelSteps_speed_half[4]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="AccelerationRampTest.maxAccelSteps_speed_half:AccelerationRampTest/4.maxAccelSteps_speed_half:AccelerationRampTest.maxAccelSteps_speed_half/4:*/AccelerationRampTest.maxAccelSteps_speed_half/*:*/AccelerationRampTest/*.maxAccelSteps_speed_half" TEST_MODE="PATTERN">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-        <option name="BeforeTestRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="All in AccelerationRampTest.cpp" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="all-tests(file://$PROJECT_DIR$/test/test_desktop/AccelerationRampTest.cpp)" TEST_MODE="PATTERN">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-        <option name="BeforeTestRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="All in StepperTest.cpp" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="all-tests(file://$PROJECT_DIR$/test/test_desktop/StepperTest.cpp)" TEST_MODE="PATTERN">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atSlewingCW_by8160Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/CartesianStepperTest.moveBy/whileIdle_move_atSlewingCW_by8160Steps:StepperTest/CartesianStepperTest/whileIdle_move_atSlewingCW_by8160Steps.moveBy" TEST_MODE="PATTERN">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atTrackingCW_by8160Steps]" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" temporary="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="avr-interrupt-stepper" TARGET_NAME="native_test" RUN_TARGET_PROJECT_NAME="avr-interrupt-stepper" RUN_TARGET_NAME="native_test" TEST_PATTERN="StepperTest/CartesianStepperTest.moveBy/whileIdle_move_atTrackingCW_by8160Steps:StepperTest/CartesianStepperTest/whileIdle_move_atTrackingCW_by8160Steps.moveBy" TEST_MODE="PATTERN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
         <option name="BeforeTestRunTask" enabled="true" />
@@ -147,19 +148,19 @@
       <item itemvalue="CMake Application.gtest" />
       <item itemvalue="CMake Application.gtest_main" />
       <item itemvalue="Google Test.native_test" />
+      <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atSlewingCW_by8160Steps]" />
+      <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atTrackingCW_by8160Steps]" />
       <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileTrackingCW_move_atTrackingCCW_by1Steps]" />
       <item itemvalue="Google Test.StepperTest-StepperStopTest.stop[tracking_cw]" />
-      <item itemvalue="Google Test.AccelerationRampTest.maxAccelSteps_speed_half[4]" />
-      <item itemvalue="Google Test.All in AccelerationRampTest.cpp" />
       <item itemvalue="Google Test.All in StepperTest.cpp" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atSlewingCW_by8160Steps]" />
         <item itemvalue="Google Test.All in StepperTest.cpp" />
+        <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileIdle_move_atTrackingCW_by8160Steps]" />
         <item itemvalue="Google Test.StepperTest-CartesianStepperTest.moveBy[whileTrackingCW_move_atTrackingCCW_by1Steps]" />
         <item itemvalue="Google Test.StepperTest-StepperStopTest.stop[tracking_cw]" />
-        <item itemvalue="Google Test.All in AccelerationRampTest.cpp" />
-        <item itemvalue="Google Test.AccelerationRampTest.maxAccelSteps_speed_half[4]" />
       </list>
     </recent_temporary>
   </component>
@@ -219,7 +220,9 @@
       <workItem from="1669069065624" duration="3116000" />
       <workItem from="1669114788817" duration="3057000" />
       <workItem from="1669150765801" duration="9543000" />
-      <workItem from="1669225463927" duration="4376000" />
+      <workItem from="1669225463927" duration="5000000" />
+      <workItem from="1669313768542" duration="1000" />
+      <workItem from="1669314713573" duration="1185000" />
     </task>
     <task id="LOCAL-00001" summary="removed unused code after multistep change">
       <created>1667156369134</created>
@@ -275,19 +278,9 @@
           <option name="timeStamp" value="132" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/test/test_desktop/StepperTest.cpp</url>
-          <line>250</line>
-          <option name="timeStamp" value="135" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/include/Stepper.h</url>
-          <line>383</line>
-          <option name="timeStamp" value="137" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/include/Stepper.h</url>
-          <line>471</line>
-          <option name="timeStamp" value="139" />
+          <line>531</line>
+          <option name="timeStamp" value="140" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

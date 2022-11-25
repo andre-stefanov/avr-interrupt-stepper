@@ -351,6 +351,21 @@ struct RampStepperTestParams {
             }
         ),
         RampStepperTestParams(
+            "whileIdle_atHalfSlewingCW_by10000Steps",
+            0.0f,
+            SLEWING_SPEED / 2,
+            10000,
+            {
+                RampStairs::NONE,
+                1,
+                {1, 64},
+                0,
+                1808,
+                Ramp::REAL_TYPE::getIntervalForSpeed(SLEWING_SPEED / 2),
+                {64, 1}
+            }
+        ),
+        RampStepperTestParams(
             "whileIdle_atSlewingCW_by227Steps",
             0.0f,
             SLEWING_SPEED,
@@ -368,7 +383,8 @@ struct RampStepperTestParams {
     );
   }
 };
-
+constexpr auto s = Ramp::REAL_TYPE ::interval(63);
+constexpr auto i = Ramp ::REAL_TYPE ::getIntervalForSpeed(SLEWING_SPEED / 2);
 using RampStepperTest = StepperTest<RampStepperTestParams>;
 
 TEST_P(RampStepperTest, moveBy) {

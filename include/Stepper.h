@@ -573,7 +573,7 @@ public:
             }
                 // full ramp
             else {
-                accel_stairs_left = RAMP::STAIRS_COUNT - 1 - ramp_stair;
+                accel_stairs_left = required_accel_stairs;
                 run_interval = spec.run_interval;
             }
 

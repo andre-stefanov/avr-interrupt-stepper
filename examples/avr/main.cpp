@@ -6,6 +6,9 @@
 
 TMC2209Stepper* stepper;
 
+STEPPER_USE_TIMER(3);
+STEPPER_USE_TIMER(4);
+
 void configureRaDriver()
 {
 
@@ -62,10 +65,3 @@ void loop()
 {
     do { } while (1);
 }
-
-#ifdef ARDUINO_ARCH_AVR
-ISR(TIMER3_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_3>::handle_overflow(); }
-ISR(TIMER3_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_3>::handle_compare_match(); }
-ISR(TIMER4_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_4>::handle_overflow(); }
-ISR(TIMER4_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_4>::handle_compare_match(); }
-#endif

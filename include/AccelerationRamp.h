@@ -84,8 +84,6 @@ public:
     constexpr static uint16_t STAIRS_COUNT = STAIRS;
 
     constexpr static uint8_t STEPS_PER_STAIR = floor_pow2_u8((uint8_t) STEPS_PER_STAIR_IDEAL);
-    constexpr static uint8_t FIRST_STEP = 0;
-    constexpr static uint8_t LAST_STEP = STEPS_PER_STAIR - 1;
 
     constexpr static uint32_t STEPS_TOTAL = static_cast<uint32_t>(STAIRS_COUNT - 1) * STEPS_PER_STAIR;
 
@@ -108,6 +106,32 @@ public:
             return static_cast<uint16_t>(sps * sps / (2 * ACCELERATION_UTIL));
         }
     }
+};
+
+template<uint32_t T_FREQ>
+class ConstantRamp {
+public:
+
+    constexpr static Intervals<0> intervals = {};
+
+    constexpr static uint16_t STAIRS_COUNT = 0;
+
+    constexpr static uint8_t STEPS_PER_STAIR = 0;
+
+    constexpr static uint32_t STEPS_TOTAL = 0;
+
+    static constexpr inline __attribute__((always_inline)) uint32_t interval(const uint16_t stair) {
+        return 0;
+    }
+
+    static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(const float sps) {
+        return static_cast<uint32_t>(T_FREQ / abs(sps));
+    }
+
+    static constexpr inline __attribute__((always_inline)) uint16_t maxAccelStairs(const float sps) {
+        return 0;
+    }
+
 };
 
 #endif // ACCELERATION_RAMP_H

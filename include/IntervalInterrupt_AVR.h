@@ -301,7 +301,7 @@ template <Timer T>
 const uint32_t IntervalInterrupt<T>::FREQ = F_CPU;
 
 #define STEPPER_USE_TIMER(x) \
-  ISR(TIMER##x##_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_##x##>::handle_overflow(); } \
-  ISR(TIMER##x##_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_##x##>::handle_compare_match(); }
+  ISR(TIMER##x##_OVF_vect) { IntervalInterrupt_AVR<Timer::TIMER_##x>::handle_overflow(); } \
+  ISR(TIMER##x##_COMPA_vect) { IntervalInterrupt_AVR<Timer::TIMER_##x>::handle_compare_match(); }
 
 #endif

@@ -2,9 +2,11 @@
 
 #include <stdint.h>
 
-template <typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR = false>
+template <typename T_PIN_STEP, typename T_PIN_DIR>
 class Driver
 {
+private:
+    static bool isInverted;
 
 public:
     Driver() = delete;
@@ -15,6 +17,8 @@ public:
         T_PIN_DIR::init();
     }
 
+    static inline void __attribute__((always_inline)) setInverted(bool value);
+
     static inline __attribute__((always_inline)) void step();
 
     static inline __attribute__((always_inline)) void dir(bool cw);
@@ -22,36 +26,28 @@ public:
 
 #ifndef DRIVER_CUSTOM_IMPL
 
-template <typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR>
-inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR, T_INVERT_DIR>::step()
+template <typename T_PIN_STEP, typename T_PIN_DIR>
+inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::setInverted(bool value)
+{
+    isInverted = value;
+}
+
+template <typename T_PIN_STEP, typename T_PIN_DIR>
+inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::step()
 {
     T_PIN_STEP::pulse();
 }
 
-template <typename T_PIN_STEP, typename T_PIN_DIR, bool T_INVERT_DIR>
-inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR, T_INVERT_DIR>::dir(bool cw)
+template <typename T_PIN_STEP, typename T_PIN_DIR>
+inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::dir(bool cw)
 {
-    if (T_INVERT_DIR)
+    if (cw || isInverted)
     {
-        if (cw)
-        {
-            T_PIN_DIR::low();
-        }
-        else
-        {
-            T_PIN_DIR::high();
-        }
+        T_PIN_DIR::low();
     }
     else
     {
-        if (cw)
-        {
-            T_PIN_DIR::high();
-        }
-        else
-        {
-            T_PIN_DIR::low();
-        }
+        T_PIN_DIR::high();
     }
 }
 

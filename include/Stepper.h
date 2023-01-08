@@ -252,6 +252,10 @@ public:
         cb_complete = StepperCallback();
     }
 
+    static void setInverted(bool value) {
+        DRIVER::setInverted(value);
+    }
+
     static void reset() {
         pos = 0;
 

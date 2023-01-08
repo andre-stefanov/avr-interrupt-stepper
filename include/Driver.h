@@ -27,6 +27,9 @@ public:
 #ifndef DRIVER_CUSTOM_IMPL
 
 template <typename T_PIN_STEP, typename T_PIN_DIR>
+bool Driver<T_PIN_STEP, T_PIN_DIR>::isInverted = false;
+
+template <typename T_PIN_STEP, typename T_PIN_DIR>
 inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::setInverted(bool value)
 {
     isInverted = value;

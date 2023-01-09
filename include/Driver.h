@@ -44,7 +44,7 @@ inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::step()
 template <typename T_PIN_STEP, typename T_PIN_DIR>
 inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::dir(bool cw)
 {
-    if (cw || isInverted)
+    if (cw != isInverted)
     {
         T_PIN_DIR::low();
     }

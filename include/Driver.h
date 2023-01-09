@@ -46,11 +46,11 @@ inline __attribute__((always_inline)) void Driver<T_PIN_STEP, T_PIN_DIR>::dir(bo
 {
     if (cw != isInverted)
     {
-        T_PIN_DIR::low();
+        T_PIN_DIR::high();
     }
     else
     {
-        T_PIN_DIR::high();
+        T_PIN_DIR::low();
     }
 }
 

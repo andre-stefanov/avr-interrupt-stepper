@@ -46,7 +46,7 @@ namespace config
 {
     struct Ra
     {
-        // constexpr static auto TRANSMISSION = RA_TRANSMISSION;
+        constexpr static auto TRANSMISSION = RA_TRANSMISSION;
 
         constexpr static auto SPR = static_cast<uint32_t>(RA_STEPPER_SPR) * static_cast<uint32_t>(RA_MICROSTEPPING);
 
@@ -63,16 +63,16 @@ namespace config
         using pin_dir = Pin<RA_DIR_PIN>;
 
         using interrupt = IntervalInterrupt<Timer::TIMER_3>;
-        using driver = Driver<SPR, pin_step, pin_dir, RA_DRIVER_INVERT_DIR>;
+        using driver = Driver<pin_step, pin_dir>;
 
-        using ramp_slew = AccelerationRamp<256, interrupt::FREQ, driver::SPR, SPEED_SLEWING.mrad_u32(), ACCELERATION.mrad_u32()>;
-        using ramp_trk = AccelerationRamp<2, interrupt::FREQ, driver::SPR, SPEED_TRACKING.mrad_u32(), SPEED_TRACKING.mrad_u32()>;
+        using ramp_slew = AccelerationRamp<256, interrupt::FREQ, SPEED_SLEWING.mrad_u32(), ACCELERATION.mrad_u32()>;
+        using ramp_trk = AccelerationRamp<2, interrupt::FREQ, SPEED_TRACKING.mrad_u32(), SPEED_TRACKING.mrad_u32()>;
 
         using stepper_slew = Stepper<interrupt, driver, ramp_slew>;
         using stepper_trk = Stepper<interrupt, driver, ramp_trk>;
 
-        constexpr static float SPEED_SLEWING_SPS = SPEED_SLEWING / stepper_slew::ANGLE_PER_STEP;
-        constexpr static float SPEED_TRACKING_SPS = SPEED_TRACKING / stepper_trk::ANGLE_PER_STEP;
+        // constexpr static float SPEED_SLEWING_SPS = SPEED_SLEWING / stepper_slew::ANGLE_PER_STEP;
+        // constexpr static float SPEED_TRACKING_SPS = SPEED_TRACKING / stepper_trk::ANGLE_PER_STEP;
     };
 
     struct Dec
@@ -94,12 +94,12 @@ namespace config
         using pin_dir = Pin<DEC_DIR_PIN>;
 
         using interrupt = IntervalInterrupt<Timer::TIMER_4>;
-        using driver = Driver<SPR, Pin<DEC_STEP_PIN>, Pin<DEC_DIR_PIN>, DEC_DRIVER_INVERT_DIR>;
+        using driver = Driver<Pin<DEC_STEP_PIN>, Pin<DEC_DIR_PIN>>;
         
         using stepper_slew = Stepper<interrupt, driver, Ra::ramp_slew>;
         using stepper_trk = Stepper<interrupt, driver, Ra::ramp_trk>;
 
-        constexpr static float SPEED_SLEWING_SPS = SPEED_SLEWING / stepper_slew::ANGLE_PER_STEP;
+        // constexpr static float SPEED_SLEWING_SPS = SPEED_SLEWING / stepper_slew::ANGLE_PER_STEP;
     };
 
     // struct AZ

@@ -31,33 +31,3 @@ TEST_F(DriverTest, init)
     EXPECT_CALL(*PIN_DIR::mock, init()).Times(1);
     Driver<PIN_STEP, PIN_DIR>::init();
 }
-
-TEST_F(DriverTest, dir_cw)
-{
-    EXPECT_CALL(*PIN_DIR::mock, high()).Times(1);
-    Driver<PIN_STEP, PIN_DIR, false>::dir(true);
-}
-
-TEST_F(DriverTest, dir_ccw)
-{
-    EXPECT_CALL(*PIN_DIR::mock, low()).Times(1);
-    Driver<PIN_STEP, PIN_DIR, false>::dir(false);
-}
-
-TEST_F(DriverTest, dir_cw_inv)
-{
-    EXPECT_CALL(*PIN_DIR::mock, low()).Times(1);
-    Driver<PIN_STEP, PIN_DIR, true>::dir(true);
-}
-
-TEST_F(DriverTest, dir_ccw_inv)
-{
-    EXPECT_CALL(*PIN_DIR::mock, high()).Times(1);
-    Driver<PIN_STEP, PIN_DIR, true>::dir(false);
-}
-
-TEST_F(DriverTest, step)
-{
-    EXPECT_CALL(*PIN_STEP::mock, pulse()).Times(1);
-    Driver<PIN_STEP, PIN_DIR, true>::step();
-}

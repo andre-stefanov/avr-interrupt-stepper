@@ -69,7 +69,7 @@ public:
 
             if (enable)
             {
-                Config::stepper::moveTo(STEPPER_SPEED_TRACKING, transmit(limit_max));
+                Config::stepper_trk::moveTo(STEPPER_SPEED_TRACKING, transmit(limit_max));
                 _recentTrackingStartTime = timestamp;
             }
             else

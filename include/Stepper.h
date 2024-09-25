@@ -371,12 +371,27 @@ public:
         stop();
     }
 
+    static void move(const float sps, StepperCallback onComplete = StepperCallback()) {
+        move(MovementSpec::distance(sps, INT32_MAX - 1), onComplete);
+    }
+
     static void moveTime(const float sps, const uint32_t time_ms, StepperCallback onComplete = StepperCallback()) {
         move(MovementSpec::time(sps, time_ms), onComplete);
     }
 
     static void moveTo(const float sps, const int32_t target, StepperCallback onComplete = StepperCallback()) {
-        move(MovementSpec::distance(sps, target - getPosition()), onComplete);
+        int32_t position = getPosition();
+        
+        if (position > 0 && target < INT32_MIN + position) {
+            move(MovementSpec::distance(sps, INT32_MIN), onComplete);
+        }
+
+        if (position < 0 && target > INT32_MAX + position) {
+            move(MovementSpec::distance(sps, INT32_MAX), onComplete);
+            return;
+        }
+
+        move(MovementSpec::distance(sps, target - position), onComplete);
     }
 
     static void

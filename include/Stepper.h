@@ -382,15 +382,19 @@ public:
     static void moveTo(const float sps, const int32_t target, StepperCallback onComplete = StepperCallback()) {
         int32_t position = getPosition();
         
+        // prevent overflow in negative direction
         if (position > 0 && target < INT32_MIN + position) {
             move(MovementSpec::distance(sps, INT32_MIN), onComplete);
+            return;
         }
 
+        // prevent overflow in positive direction
         if (position < 0 && target > INT32_MAX + position) {
             move(MovementSpec::distance(sps, INT32_MAX), onComplete);
             return;
         }
 
+        // move to requested target
         move(MovementSpec::distance(sps, target - position), onComplete);
     }
 

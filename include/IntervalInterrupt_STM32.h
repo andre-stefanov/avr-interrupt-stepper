@@ -26,23 +26,513 @@
 #define SET_INTERVAL_TIMING_END()
 #endif
 
+
 /**
  * @brief Enumeration of 16 bit timers on atmega2560
  */
 enum class Timer : int
 {
+#if defined(STM32F0)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_14 = 14,
+    TIMER_15 = 15,
     TIMER_16 = 16,
     TIMER_17 = 17
+#elif defined(STM32F1)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11,
+    TIMER_12 = 12,
+    TIMER_13 = 13,
+    TIMER_14 = 14
+#elif defined(STM32F2)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11,
+    TIMER_12 = 12,
+    TIMER_13 = 13,
+    TIMER_14 = 14
+#elif defined(STM32F3)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_15 = 15,
+    TIMER_16 = 16,
+    TIMER_17 = 17,
+    TIMER_20 = 20
+#elif defined(STM32F4)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11,
+    TIMER_12 = 12,
+    TIMER_13 = 13,
+    TIMER_14 = 14
+#elif defined(STM32F7)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11,
+    TIMER_12 = 12,
+    TIMER_13 = 13,
+    TIMER_14 = 14
+#elif defined(STM32L0)
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_21 = 21,
+    TIMER_22 = 22
+#elif defined(STM32L1)
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11
+#elif defined(STM32L4)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_15 = 15,
+    TIMER_16 = 16,
+    TIMER_17 = 17
+#elif defined(STM32H7)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_9 = 9,
+    TIMER_10 = 10,
+    TIMER_11 = 11,
+    TIMER_12 = 12,
+    TIMER_13 = 13,
+    TIMER_14 = 14
+#elif defined(STM32G0)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_14 = 14,
+    TIMER_15 = 15,
+    TIMER_16 = 16,
+    TIMER_17 = 17
+#elif defined(STM32G4)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_15 = 15,
+    TIMER_16 = 16,
+    TIMER_17 = 17,
+    TIMER_20 = 20
+#elif defined(STM32WB)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_16 = 16,
+    TIMER_17 = 17
+#elif defined(STM32MP1)
+    TIMER_1 = 1,
+    TIMER_2 = 2,
+    TIMER_3 = 3,
+    TIMER_4 = 4,
+    TIMER_5 = 5,
+    TIMER_6 = 6,
+    TIMER_7 = 7,
+    TIMER_8 = 8,
+    TIMER_12 = 12,
+    TIMER_15 = 15
+#endif
 };
 
 constexpr TIM_TypeDef *timer_def_from_enum(const Timer timer)
 {
     switch (timer)
     {
+#if defined(STM32F0)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_14:
+        return TIM14;
+    case Timer::TIMER_15:
+        return TIM15;
     case Timer::TIMER_16:
         return TIM16;
     case Timer::TIMER_17:
         return TIM17;
+#elif defined(STM32F1)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_13:
+        return TIM13;
+    case Timer::TIMER_14:
+        return TIM14;
+#elif defined(STM32F2)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_13:
+        return TIM13;
+    case Timer::TIMER_14:
+        return TIM14;
+#elif defined(STM32F3)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_15:
+        return TIM15;
+    case Timer::TIMER_16:
+        return TIM16;
+    case Timer::TIMER_17:
+        return TIM17;
+    case Timer::TIMER_20:
+        return TIM20;
+#elif defined(STM32F4)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_13:
+        return TIM13;
+    case Timer::TIMER_14:
+        return TIM14;
+#elif defined(STM32F7)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_13:
+        return TIM13;
+    case Timer::TIMER_14:
+        return TIM14;
+#elif defined(STM32L0)
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_21:
+        return TIM21;
+    case Timer::TIMER_22:
+        return TIM22;
+#elif defined(STM32L1)
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+#elif defined(STM32L4)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_15:
+        return TIM15;
+    case Timer::TIMER_16:
+        return TIM16;
+    case Timer::TIMER_17:
+        return TIM17;
+#elif defined(STM32H7)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_9:
+        return TIM9;
+    case Timer::TIMER_10:
+        return TIM10;
+    case Timer::TIMER_11:
+        return TIM11;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_13:
+        return TIM13;
+    case Timer::TIMER_14:
+        return TIM14;
+#elif defined(STM32G0)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_14:
+        return TIM14;
+    case Timer::TIMER_15:
+        return TIM15;
+    case Timer::TIMER_16:
+        return TIM16;
+    case Timer::TIMER_17:
+        return TIM17;
+#elif defined(STM32G4)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_15:
+        return TIM15;
+    case Timer::TIMER_16:
+        return TIM16;
+    case Timer::TIMER_17:
+        return TIM17;
+    case Timer::TIMER_20:
+        return TIM20;
+#elif defined(STM32WB)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_16:
+        return TIM16;
+    case Timer::TIMER_17:
+        return TIM17;
+#elif defined(STM32MP1)
+    case Timer::TIMER_1:
+        return TIM1;
+    case Timer::TIMER_2:
+        return TIM2;
+    case Timer::TIMER_3:
+        return TIM3;
+    case Timer::TIMER_4:
+        return TIM4;
+    case Timer::TIMER_5:
+        return TIM5;
+    case Timer::TIMER_6:
+        return TIM6;
+    case Timer::TIMER_7:
+        return TIM7;
+    case Timer::TIMER_8:
+        return TIM8;
+    case Timer::TIMER_12:
+        return TIM12;
+    case Timer::TIMER_15:
+        return TIM15;
+#endif
     default:
         return nullptr;
     }

@@ -292,7 +292,7 @@ public:
     static uint32_t distanceToGo() {
         noInterrupts();
         const uint16_t pre_decel_stairs = pre_decel_stairs_left;
-        const uint16_t accel_stairs = pre_decel_stairs_left;
+        const uint16_t accel_stairs = accel_stairs_left;
         const uint32_t run_rest_blocks = run_full_blocks_left;
         const uint8_t run_rest_block = run_rest_block_steps;
         const uint32_t run_steps = run_steps_left;

@@ -28,7 +28,12 @@ add_executable(
         test_desktop/StepperTest_old.cpp
         test_desktop/StepperTest.cpp)
 
+add_executable(
+        angle_test
+        test_desktop/AngleTest.cpp)
+
 target_compile_definitions(native_test PUBLIC F_CPU=16000000)
+target_compile_definitions(angle_test PUBLIC F_CPU=16000000)
 
 target_link_libraries(
         native_test
@@ -36,5 +41,11 @@ target_link_libraries(
         etl
 )
 
+target_link_libraries(
+        angle_test
+        GTest::gtest_main
+)
+
 include(GoogleTest)
 gtest_discover_tests(native_test)
+gtest_discover_tests(angle_test)

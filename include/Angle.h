@@ -24,7 +24,7 @@ public:
 
     constexpr Angle operator-(const float x) const
     {
-        return Angle(_rad * x);
+        return Angle(_rad - x);
     }
 
     constexpr Angle operator+(const float x) const

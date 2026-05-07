@@ -50,6 +50,11 @@ class AccelerationRamp {
         return static_cast<float>(value);
     }
 
+    constexpr static inline float absf(const float value)
+    {
+        return (value < 0.0f) ? -value : value;
+    }
+
     constexpr static uint32_t MAX_STEPS_IDEAL = static_cast<uint32_t>(f(MAX_SPEED) * f(MAX_SPEED) / (2.0f * f(ACCELERATION)));
     constexpr static uint32_t ACCELERATION_UTIL = ACCELERATION * MAX_STEPS_IDEAL / STAIRS;
 
@@ -96,11 +101,11 @@ public:
     }
 
     static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(const float sps) {
-        return static_cast<uint32_t>(T_FREQ / abs(sps));
+        return static_cast<uint32_t>(T_FREQ / absf(sps));
     }
 
     static constexpr inline __attribute__((always_inline)) uint16_t maxAccelStairs(const float sps) {
-        if (abs(sps) >= MAX_SPEED) {
+        if (absf(sps) >= MAX_SPEED) {
             return STAIRS - 1;
         } else {
             return static_cast<uint16_t>(sps * sps / (2 * ACCELERATION_UTIL));
@@ -111,6 +116,10 @@ public:
 template<uint32_t T_FREQ>
 class ConstantRamp {
 public:
+
+    constexpr static inline float absf(const float value) {
+        return (value < 0.0f) ? -value : value;
+    }
 
     constexpr static Intervals<0> intervals = {};
 
@@ -125,7 +134,7 @@ public:
     }
 
     static constexpr inline __attribute__((always_inline)) uint32_t getIntervalForSpeed(const float sps) {
-        return static_cast<uint32_t>(T_FREQ / abs(sps));
+        return static_cast<uint32_t>(T_FREQ / absf(sps));
     }
 
     static constexpr inline __attribute__((always_inline)) uint16_t maxAccelStairs(const float sps) {

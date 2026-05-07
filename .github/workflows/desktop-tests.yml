@@ -1,0 +1,25 @@
+name: Desktop Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build desktop tests
+        run: cmake --build build --parallel
+
+      - name: Run desktop tests
+        run: ctest --test-dir build --output-on-failure

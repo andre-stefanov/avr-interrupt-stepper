@@ -105,10 +105,13 @@ public:
     }
 
     static constexpr inline __attribute__((always_inline)) uint16_t maxAccelStairs(const float sps) {
-        if (absf(sps) >= MAX_SPEED) {
+        const float speed = absf(sps);
+
+        if (speed >= MAX_SPEED) {
             return STAIRS - 1;
         } else {
-            return static_cast<uint16_t>(sps * sps / (2 * ACCELERATION_UTIL));
+            const auto stairs = static_cast<uint16_t>(speed * speed / (2 * ACCELERATION_UTIL));
+            return (stairs >= STAIRS) ? STAIRS - 1 : stairs;
         }
     }
 };

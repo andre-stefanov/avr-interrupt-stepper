@@ -383,8 +383,8 @@ struct RampStepperTestParams {
     );
   }
 };
-constexpr auto s = Ramp::REAL_TYPE ::interval(63);
-constexpr auto i = Ramp ::REAL_TYPE ::getIntervalForSpeed(SLEWING_SPEED / 2);
+// constexpr auto s = Ramp::REAL_TYPE ::interval(63);
+// constexpr auto i = Ramp ::REAL_TYPE ::getIntervalForSpeed(SLEWING_SPEED / 2);
 using RampStepperTest = StepperTest<RampStepperTestParams>;
 
 TEST_P(RampStepperTest, moveBy) {

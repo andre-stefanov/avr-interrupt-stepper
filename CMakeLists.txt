@@ -8,8 +8,6 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 
-#[[include(cmake/generic-gcc-avr.cmake)]]
-
 include_directories(include)
 
 enable_testing()

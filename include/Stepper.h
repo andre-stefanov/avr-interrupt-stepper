@@ -67,6 +67,94 @@ private:
 
     static StepperCallback cb_complete;
 
+    struct StateSnapshot {
+        int32_t pos;
+        int8_t cur_dir;
+        uint16_t ramp_stair;
+        uint16_t pre_decel_stairs_left;
+        uint16_t accel_stairs_left;
+        uint32_t run_steps_left;
+        uint32_t run_full_blocks_left;
+        uint8_t run_rest_block_steps;
+        uint8_t multi_steps_made;
+    };
+
+    static StateSnapshot stateSnapshot() {
+        noInterrupts();
+        const StateSnapshot state = {
+                pos,
+                cur_dir,
+                ramp_stair,
+                pre_decel_stairs_left,
+                accel_stairs_left,
+                run_steps_left,
+                run_full_blocks_left,
+                run_rest_block_steps,
+                multi_steps_made,
+        };
+        interrupts();
+
+        return state;
+    }
+
+    static uint32_t queuedRunSteps(const StateSnapshot& state) {
+        return state.run_steps_left
+                + (state.run_full_blocks_left * static_cast<uint32_t>(RUN_BLOCK_SIZE))
+                + state.run_rest_block_steps;
+    }
+
+    static uint32_t stepsRemaining(const StateSnapshot& state) {
+        const uint32_t steps_per_stair = static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
+        const uint32_t partial_steps = static_cast<uint32_t>(state.multi_steps_made);
+
+        if (state.pre_decel_stairs_left > 0) {
+            const uint32_t pre_decel_steps =
+                    (static_cast<uint32_t>(state.pre_decel_stairs_left) * steps_per_stair) - partial_steps;
+            const uint32_t accel_steps = static_cast<uint32_t>(state.accel_stairs_left) * steps_per_stair;
+            const uint32_t decel_stairs =
+                    static_cast<uint32_t>(state.ramp_stair - state.pre_decel_stairs_left + state.accel_stairs_left);
+
+            return pre_decel_steps
+                    + accel_steps
+                    + queuedRunSteps(state)
+                    + (decel_stairs * steps_per_stair);
+        }
+
+        if (state.accel_stairs_left > 0) {
+            const uint32_t accel_steps =
+                    (static_cast<uint32_t>(state.accel_stairs_left) * steps_per_stair) - partial_steps;
+            const uint32_t decel_stairs =
+                    static_cast<uint32_t>(state.ramp_stair) + state.accel_stairs_left - 1U;
+
+            return accel_steps
+                    + queuedRunSteps(state)
+                    + (decel_stairs * steps_per_stair);
+        }
+
+        if (state.run_steps_left > 0) {
+            return state.run_steps_left;
+        }
+
+        if (state.run_full_blocks_left > 0) {
+            return (state.run_full_blocks_left * static_cast<uint32_t>(RUN_BLOCK_SIZE))
+                    - partial_steps
+                    + state.run_rest_block_steps
+                    + (static_cast<uint32_t>(state.ramp_stair) * steps_per_stair);
+        }
+
+        if (state.run_rest_block_steps > 0) {
+            return static_cast<uint32_t>(state.run_rest_block_steps)
+                    - partial_steps
+                    + (static_cast<uint32_t>(state.ramp_stair) * steps_per_stair);
+        }
+
+        if (state.ramp_stair > 0) {
+            return (static_cast<uint32_t>(state.ramp_stair) * steps_per_stair) - partial_steps;
+        }
+
+        return 0;
+    }
+
     static void pre_decelerate_multistep_handler() {
         DRIVER::step();
 
@@ -275,12 +363,9 @@ public:
     }
 
     static int32_t getPosition() {
-        noInterrupts();
-        const uint32_t cur_pos = pos;
-        const uint8_t cur_multistep = multi_steps_made;
-        interrupts();
+        const StateSnapshot state = stateSnapshot();
 
-        return cur_pos + (cur_multistep * cur_dir);
+        return state.pos + (static_cast<int32_t>(state.multi_steps_made) * static_cast<int32_t>(state.cur_dir));
     }
 
     static void setPosition(const int32_t value) {
@@ -290,36 +375,11 @@ public:
     }
 
     static uint32_t distanceToGo() {
-        noInterrupts();
-        const uint16_t pre_decel_stairs = pre_decel_stairs_left;
-        const uint16_t accel_stairs = accel_stairs_left;
-        const uint32_t run_rest_blocks = run_full_blocks_left;
-        const uint8_t run_rest_block = run_rest_block_steps;
-        const uint32_t run_steps = run_steps_left;
-        const uint16_t cur_ramp_stair = ramp_stair;
-        interrupts();
-
-        const uint16_t decel_stairs = cur_ramp_stair - pre_decel_stairs + accel_stairs;
-
-        uint32_t steps_left = 0;
-        // pre-decel steps
-        steps_left += static_cast<uint32_t>(pre_decel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
-        // accel steps
-        steps_left += static_cast<uint32_t>(accel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
-        // run blocks steps
-        steps_left += static_cast<uint32_t>(run_rest_blocks) * static_cast<uint32_t>(RUN_BLOCK_SIZE);
-        // run rest block steps
-        steps_left += run_rest_block;
-        // run slow steps
-        steps_left += run_steps;
-        // decel steps
-        steps_left += static_cast<uint32_t>(decel_stairs) * static_cast<uint32_t>(RAMP::STEPS_PER_STAIR);
-
-        return steps_left;
+        return stepsRemaining(stateSnapshot());
     }
 
     static bool isRunning() {
-        return cur_dir != 0;
+        return stateSnapshot().cur_dir != 0;
     }
 
     struct MovementSpec {
@@ -357,6 +417,7 @@ public:
         INTERRUPT::stop();
 
         if (ramp_stair > 0) {
+            pos += multi_steps_made * static_cast<int32_t>(cur_dir);
             multi_steps_made = 0;
 
             INTERRUPT::setCallback(decelerate_multistep_handler);

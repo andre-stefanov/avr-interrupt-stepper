@@ -398,8 +398,6 @@ struct RampStairs
 {
   constexpr RampStairs(uint16_t from, uint16_t to) : from(from), to(to) {}
 
-  //    constexpr RampStairs(const RampStairs &other) = default;
-
   explicit operator bool() const { return from > 0 && to > 0; }
 
   [[nodiscard]] uint16_t total() const
@@ -505,8 +503,7 @@ struct RampStepperTestParams
              {1, 1}}));
   }
 };
-// constexpr auto s = Ramp::REAL_TYPE ::interval(63);
-// constexpr auto i = Ramp ::REAL_TYPE ::getIntervalForSpeed(SLEWING_SPEED / 2);
+
 using RampStepperTest = StepperTest<RampStepperTestParams>;
 
 TEST_P(RampStepperTest, moveBy)

@@ -173,6 +173,20 @@ struct PlannerSequenceParams
          reverseHalfFastRunRestSteps,
          Ramp::REAL_TYPE::interval(reverseHalfFastAccelStairs),
          RampStairs{reverseHalfFastAccelStairs, 1}}),
+      // Slow down in the same direction from a steady half-fast run, then finish
+      // with one slow step and terminate without any reverse or extra decel phase.
+      PlannerSequenceParams(
+        "half_fast_forward_to_slow_forward_single_step",
+        FAST_SPEED / 2,
+        SLOW_SPEED,
+        static_cast<int32_t>(halfFastStopSteps + 1U),
+        {RampStairs{halfFastStair, 1},
+         0,
+         RampStairs::NONE,
+         1,
+         1,
+         Ramp::REAL_TYPE::getIntervalForSpeed(SLOW_SPEED),
+         RampStairs::NONE}),
       // Hold the same half-fast speed and request exactly the stop distance.
       // This should skip the run phase entirely and switch straight into deceleration.
       PlannerSequenceParams(

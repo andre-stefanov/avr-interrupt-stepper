@@ -71,6 +71,37 @@ struct TimedMoveTestParams
   int32_t expected_steps;
 };
 
+struct TimedMoveCurrentStateParams
+{
+  using GTestTuple = std::tuple<NamedValue<float>, TimedMoveTestParams>;
+
+  explicit TimedMoveCurrentStateParams(const GTestTuple &tuple)
+      : initial_speed(std::get<0>(tuple).value),
+        timed_move(std::get<1>(tuple)) {}
+
+  static auto values()
+  {
+    const std::vector<NamedValue<float>> initialSpeeds = {
+        NamedValue("SlowCW", SLOW_SPEED),
+        NamedValue("SlowCCW", -SLOW_SPEED),
+        NamedValue("FastCW", FAST_SPEED),
+        NamedValue("FastCCW", -FAST_SPEED),
+    };
+
+    return testing::Combine(
+        testing::ValuesIn(initialSpeeds),
+        testing::Values(
+            TimedMoveTestParams("forward_for_one_second", 5.0f, 1000U, 5),
+            TimedMoveTestParams("backward_for_one_second", -5.0f, 1000U, -5),
+            TimedMoveTestParams("forward_truncates_fractional_step", 2.5f, 1000U, 2),
+            TimedMoveTestParams("backward_truncates_fractional_step", -2.5f, 1000U, -2),
+            TimedMoveTestParams("below_one_step", 2.5f, 399U, 0)));
+  }
+
+  float initial_speed;
+  TimedMoveTestParams timed_move;
+};
+
 struct RelativeMovementMatrixParams
 {
   using GTestTuple = std::tuple<NamedValue<float>, NamedValue<float>, int32_t>;
@@ -125,6 +156,7 @@ struct RelativeMovementMatrixParams
 using StepperStopBehaviorTest = StepperBehaviorTest<StepperStopTestParams>;
 using StepperInversionBehaviorTest = StepperBehaviorTest<bool>;
 using TimedMoveBehaviorTest = StepperBehaviorTest<TimedMoveTestParams>;
+using TimedMoveCurrentStateTest = StepperBehaviorTest<TimedMoveCurrentStateParams::GTestTuple>;
 using RelativeMovementMatrixTest = StepperBehaviorTest<RelativeMovementMatrixParams::GTestTuple>;
 
 struct StepperStateTest : public StepperBehaviorTestBase
@@ -653,6 +685,44 @@ TEST_F(StepperStateTest, MoveTimeWithZeroDurationTerminatesImmediately)
 
   expectIdleState(0);
 }
+
+TEST_P(TimedMoveCurrentStateTest, MoveTimeReachesExpectedFinalPositionAcrossCurrentStates)
+{
+  const TimedMoveCurrentStateParams p = TimedMoveCurrentStateParams(GetParam());
+
+  prepareRunningAtSpeed(p.initial_speed);
+
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(_)).Times(AnyNumber());
+
+  const int32_t initialPosition = TestStepper::getPosition();
+  constexpr uint32_t reverseStepBudget =
+      2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR);
+
+  TestStepper::moveTime(p.timed_move.speed, p.timed_move.time_ms);
+
+  if (p.timed_move.expected_steps != 0)
+  {
+    EXPECT_TRUE(TestStepper::isRunning());
+    EXPECT_GT(TestStepper::distanceToGo(), 0U);
+  }
+
+  runInterruptSteps(static_cast<uint32_t>(std::abs(p.timed_move.expected_steps)) + reverseStepBudget);
+
+  expectIdleState(initialPosition + p.timed_move.expected_steps);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    StepperBehavior,
+    TimedMoveCurrentStateTest,
+    TimedMoveCurrentStateParams::values(),
+    [](const TestParamInfo<TimedMoveCurrentStateParams::GTestTuple> &i)
+    {
+      return "while" + std::get<0>(i.param).name
+          + "_moveTime_" + std::get<1>(i.param).name;
+    });
 
 TEST_P(RelativeMovementMatrixTest, MoveByReachesExpectedFinalPositionAcrossCurrentStates)
 {

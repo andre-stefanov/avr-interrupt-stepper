@@ -2,10 +2,12 @@
 #include <Arduino.h>
 
 void runDriverTest();
+void runStepperPerformanceTest();
 
 void runUnityTests(void) {
   UNITY_BEGIN();
   runDriverTest();
+  runStepperPerformanceTest();
   UNITY_END();
 }
 

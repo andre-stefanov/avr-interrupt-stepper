@@ -5,7 +5,7 @@
 using PIN_STEP = Pin<0>;
 using PIN_DIR = Pin<0>;
 
-using TestDriver = Driver<400, PIN_STEP, PIN_DIR>;
+using TestDriver = Driver<PIN_STEP, PIN_DIR>;
 
 void test_init()
 {

@@ -1,10 +1,16 @@
 #pragma once
 
+#ifndef PROFILE_STEPPER
 #define PROFILE_STEPPER 0
+#endif
+#ifndef PROFILE_STEPPER_PIN
+#define PROFILE_STEPPER_PIN 45
+#endif
+
 #if PROFILE_STEPPER && defined(ARDUINO)
 #include "Pin.h"
-#define PROFILE_MOVE_BEGIN() Pin<45>::high()
-#define PROFILE_MOVE_END() Pin<45>::low()
+#define PROFILE_MOVE_BEGIN() Pin<PROFILE_STEPPER_PIN>::high()
+#define PROFILE_MOVE_END() Pin<PROFILE_STEPPER_PIN>::low()
 #else
 #define PROFILE_MOVE_BEGIN() \
     do                       \
@@ -751,6 +757,7 @@ public:
                     INTERRUPT::setCallback(run_slow_handler);
                     INTERRUPT::setInterval(RAMP::interval(1));
 
+                    PROFILE_MOVE_END();
                     return;
                 }
             }
@@ -772,6 +779,8 @@ public:
             INTERRUPT::setCallback(accelerate_multistep_handler);
             INTERRUPT::setInterval(RAMP::interval(++ramp_stair));
         }
+
+        PROFILE_MOVE_END();
     }
 };
 

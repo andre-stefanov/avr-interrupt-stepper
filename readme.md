@@ -111,6 +111,59 @@ To compile the embedded test environment without uploading to a board:
 pio test -e avr --without-uploading
 ```
 
+### AVR performance tests
+
+The embedded suite contains the performance regression test in `test/test_embedded/StepperPerformanceTest.cpp`.
+It runs on the AVR target itself and measures the steady-state step rate using the real timer ISR path, the real AVR pin backend, and the real `Stepper` state machine.
+
+The test prints the measured rate over serial during `pio test -e avr`. By default it only reports the achieved rate. To turn it into a regression gate on a dedicated board, add a minimum threshold through build flags:
+
+```ini
+build_flags =
+    ${env.build_flags}
+    -D STEPPER_PERF_MIN_STEADY_STEPS_PER_SEC=36000UL
+```
+
+You can also tune the test setup without editing the source:
+
+- `STEPPER_PERF_TARGET_SPS` sets the requested speed to characterize.
+- `STEPPER_PERF_ACCELERATION` sets the acceleration profile used to reach that speed.
+- `STEPPER_PERF_STEP_PIN` and `STEPPER_PERF_DIR_PIN` select the pins toggled by the test driver.
+- `STEPPER_PERF_MEASURE_WINDOW_US` controls the steady-state measurement window.
+
+Current reference measurement on a 16 MHz ATmega2560:
+
+- Requested rates up to `133000` steps/s were reached in steady state.
+- Once the requested rate was increased further, the achieved rate plateaued at about `132700` steps/s.
+
+Treat that number as an absolute maximum for the current single-axis test setup, not as a recommended application setting.
+This test is intentionally close to a best-case scenario: it drives one stepper, uses the real timer ISR path and AVR pin backend, and spends almost all of the CPU budget on generating steps.
+Real applications usually need extra headroom for other interrupts, main-loop work, communication, multi-axis coordination, safety handling, and any driver-specific pulse timing constraints.
+In practice the usable application limit will therefore be lower, and production thresholds should be set comfortably below the measured ceiling.
+
+Capture a baseline on the exact board and clock configuration you care about, then set the threshold slightly below that measured rate so future changes catch real regressions instead of normal run-to-run noise.
+
+## AVR performance measurement
+
+The library also exposes probe hooks for deeper on-target analysis, and they can be enabled from build flags without editing headers:
+
+- `PROFILE_STEPPER=1` with `PROFILE_STEPPER_PIN=<pin>` toggles a probe around the `Stepper::move()` planning code.
+- `DEBUG_INTERRUPT_TIMING_PIN=<pin>` toggles a probe around the compare-match ISR work, including the callback.
+- `DEBUG_INTERRUPT_SET_INTERVAL_PIN=<pin>` toggles a probe around timer reprogramming in `setInterval()`.
+
+Example `platformio.ini` additions for the `avr` environment:
+
+```ini
+build_flags =
+    ${env.build_flags}
+    -D PROFILE_STEPPER=1
+    -D PROFILE_STEPPER_PIN=45
+    -D DEBUG_INTERRUPT_TIMING_PIN=44
+    -D DEBUG_INTERRUPT_SET_INTERVAL_PIN=43
+```
+
+Drive a long move at the target speed and measure the step pin plus any enabled probe pins with a logic analyzer or oscilloscope. The step pin frequency gives the true hardware step rate, while the probe pins show where the CPU budget is spent inside planning, ISR execution, and timer updates.
+
 ## Examples
 
 Useful starting points in this repository:

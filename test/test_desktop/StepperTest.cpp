@@ -300,6 +300,165 @@ TEST_F(StepperStateTest, stopInvokesCompletionCallbackOnceAfterDeceleration)
   EXPECT_EQ(0U, TestStepper::distanceToGo());
 }
 
+TEST_F(StepperStateTest, moveToUsesAbsoluteTargetFromCurrentPosition)
+{
+  constexpr int32_t initial_pos = 100;
+  constexpr int32_t target_pos = 105;
+  constexpr int32_t steps_to_target = target_pos - initial_pos;
+
+  Driver::position = initial_pos;
+  TestStepper::setPosition(initial_pos);
+
+  {
+    InSequence s;
+
+    EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
+    EXPECT_CALL(*Driver::mock, dir(true)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*Interrupt::mock, setInterval(Ramp::REAL_TYPE::getIntervalForSpeed(TRACKING_SPEED)))
+        .RetiresOnSaturation();
+    EXPECT_CALL(*Driver::mock, step()).Times(steps_to_target).RetiresOnSaturation();
+    EXPECT_CALL(*Interrupt::mock, stop()).RetiresOnSaturation();
+  }
+
+  TestStepper::moveTo(TRACKING_SPEED, target_pos);
+
+  EXPECT_EQ(static_cast<uint32_t>(steps_to_target), TestStepper::distanceToGo());
+  EXPECT_TRUE(TestStepper::isRunning());
+
+  Interrupt::loopUntilStopped(steps_to_target);
+
+  EXPECT_EQ(target_pos, Driver::position);
+  EXPECT_EQ(target_pos, TestStepper::getPosition());
+  EXPECT_EQ(0U, TestStepper::distanceToGo());
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
+TEST_F(StepperStateTest, moveToReachesAbsoluteTargetAfterReversing)
+{
+  prepareSpeed(SLEWING_SPEED);
+
+  const int32_t current_pos = TestStepper::getPosition();
+  const int32_t target_pos = current_pos - static_cast<int32_t>(Ramp::STEPS_PER_STAIR * 3U);
+  const uint32_t stop_steps = static_cast<uint32_t>(Ramp::STAIRS_COUNT - 1) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR);
+  const uint32_t expected_remaining_steps = (stop_steps * 2U) + static_cast<uint32_t>(current_pos - target_pos);
+
+  ASSERT_GT(current_pos, target_pos);
+  ASSERT_EQ(current_pos, Driver::position);
+
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(_)).Times(AnyNumber());
+
+  TestStepper::moveTo(SLEWING_SPEED, target_pos);
+
+  EXPECT_EQ(expected_remaining_steps, TestStepper::distanceToGo());
+
+  const uint32_t limit = static_cast<uint32_t>(current_pos - target_pos)
+      + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR)
+      + 10U;
+
+  Interrupt::loopUntilStopped(limit);
+
+  EXPECT_EQ(target_pos, Driver::position);
+  EXPECT_EQ(target_pos, TestStepper::getPosition());
+  EXPECT_EQ(0U, TestStepper::distanceToGo());
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
+TEST_F(StepperStateTest, moveByReachesRequestedOffsetAfterReversingThreeStairs)
+{
+  prepareSpeed(SLEWING_SPEED);
+
+  const int32_t current_pos = TestStepper::getPosition();
+  const int32_t reverse_steps = static_cast<int32_t>(Ramp::STEPS_PER_STAIR * 3U);
+  const int32_t target_pos = current_pos - reverse_steps;
+  const uint32_t stop_steps = static_cast<uint32_t>(Ramp::STAIRS_COUNT - 1) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR);
+  const uint32_t expected_remaining_steps = (stop_steps * 2U) + static_cast<uint32_t>(reverse_steps);
+
+  ASSERT_EQ(current_pos, Driver::position);
+
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(_)).Times(AnyNumber());
+
+  TestStepper::moveBy(-SLEWING_SPEED, reverse_steps);
+
+  EXPECT_EQ(expected_remaining_steps, TestStepper::distanceToGo());
+
+  const uint32_t limit = static_cast<uint32_t>(reverse_steps)
+      + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR)
+      + 10U;
+
+  Interrupt::loopUntilStopped(limit);
+
+  EXPECT_EQ(target_pos, Driver::position);
+  EXPECT_EQ(target_pos, TestStepper::getPosition());
+  EXPECT_EQ(0U, TestStepper::distanceToGo());
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
+TEST_F(StepperStateTest, moveToClampsOverflowingNegativeDistance)
+{
+  constexpr int32_t initial_pos = 42;
+  constexpr uint32_t clamped_distance = static_cast<uint32_t>(INT32_MAX) + 1U;
+
+  Driver::position = initial_pos;
+  TestStepper::setPosition(initial_pos);
+
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(false)).Times(1);
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+
+  TestStepper::moveTo(-TRACKING_SPEED, INT32_MIN);
+
+  EXPECT_EQ(clamped_distance, TestStepper::distanceToGo());
+  EXPECT_TRUE(TestStepper::isRunning());
+
+  Interrupt::loopUntilStopped(1, false);
+
+  EXPECT_EQ(initial_pos - 1, Driver::position);
+  EXPECT_EQ(initial_pos - 1, TestStepper::getPosition());
+  EXPECT_EQ(clamped_distance - 1U, TestStepper::distanceToGo());
+
+  TestStepper::stop();
+
+  EXPECT_EQ(0U, TestStepper::distanceToGo());
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
+TEST_F(StepperStateTest, moveToClampsOverflowingPositiveDistance)
+{
+  constexpr int32_t initial_pos = -42;
+  constexpr uint32_t clamped_distance = static_cast<uint32_t>(INT32_MAX);
+
+  Driver::position = initial_pos;
+  TestStepper::setPosition(initial_pos);
+
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(true)).Times(1);
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+
+  TestStepper::moveTo(TRACKING_SPEED, INT32_MAX);
+
+  EXPECT_EQ(clamped_distance, TestStepper::distanceToGo());
+  EXPECT_TRUE(TestStepper::isRunning());
+
+  Interrupt::loopUntilStopped(1, false);
+
+  EXPECT_EQ(initial_pos + 1, Driver::position);
+  EXPECT_EQ(initial_pos + 1, TestStepper::getPosition());
+  EXPECT_EQ(clamped_distance - 1U, TestStepper::distanceToGo());
+
+  TestStepper::stop();
+
+  EXPECT_EQ(0U, TestStepper::distanceToGo());
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
 struct StepperCartesianTestParams
 {
 

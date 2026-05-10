@@ -22,10 +22,8 @@ enable_testing()
 
 add_executable(
         native_test
-        #test_desktop/main.cpp
         test_desktop/AccelerationRampTest.cpp
         test_desktop/DriverTest.cpp
-        test_desktop/StepperTest_old.cpp
         test_desktop/StepperTest.cpp)
 
 add_executable(

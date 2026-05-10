@@ -607,6 +607,30 @@ TEST_F(StepperStateTest, MoveToClampsOverflowingNegativeDistance)
   EXPECT_FALSE(TestStepper::isRunning());
 }
 
+TEST_F(StepperStateTest, MoveToClampsOverflowingNegativeDistanceToInt32Max)
+{
+  constexpr int32_t initialPosition = 42;
+  constexpr uint32_t clampedDistance = static_cast<uint32_t>(INT32_MAX);
+
+  Driver::position = initialPosition;
+  TestStepper::setPosition(initialPosition);
+
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
+  EXPECT_CALL(*Driver::mock, dir(false)).Times(1);
+  EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
+
+  TestStepper::moveTo(-SLOW_SPEED, INT32_MIN);
+  expectStepperState(initialPosition, clampedDistance, true);
+
+  runInterruptSteps(1, false);
+  expectStepperState(initialPosition - 1, clampedDistance - 1U, true);
+
+  TestStepper::stop();
+  runInterruptSteps(0);
+  EXPECT_FALSE(TestStepper::isRunning());
+}
+
 TEST_F(StepperStateTest, MoveToClampsOverflowingPositiveDistance)
 {
   constexpr int32_t initialPosition = -42;

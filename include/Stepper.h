@@ -683,24 +683,17 @@ public:
      */
     static void moveTo(const float sps, const int32_t target, StepperCallback onComplete = StepperCallback())
     {
-        int32_t position = getPosition();
+        const int32_t position = getPosition();
+        const int64_t relative_steps = static_cast<int64_t>(target) - static_cast<int64_t>(position);
 
-        // prevent overflow in negative direction
-        if (position > 0 && target < INT32_MIN + position)
-        {
-            move(MovementSpec::distance(sps, INT32_MIN), onComplete);
-            return;
-        }
+        // Clamp to the largest signed distance the planner can safely store. `move()` later takes
+        // an absolute value of `spec.steps`, so `INT32_MIN` must be avoided.
+        const int32_t clamped_steps =
+            (relative_steps > static_cast<int64_t>(INT32_MAX)) ? INT32_MAX
+            : (relative_steps < -static_cast<int64_t>(INT32_MAX)) ? -INT32_MAX
+                                                                : static_cast<int32_t>(relative_steps);
 
-        // prevent overflow in positive direction
-        if (position < 0 && target > INT32_MAX + position)
-        {
-            move(MovementSpec::distance(sps, INT32_MAX), onComplete);
-            return;
-        }
-
-        // move to requested target
-        move(MovementSpec::distance(sps, target - position), onComplete);
+        move(MovementSpec(clamped_steps, RAMP::getIntervalForSpeed(sps), RAMP::maxAccelStairs(sps)), onComplete);
     }
 
     /**

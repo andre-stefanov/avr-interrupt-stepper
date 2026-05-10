@@ -24,7 +24,8 @@ add_executable(
         native_test
         test_desktop/AccelerationRampTest.cpp
         test_desktop/DriverTest.cpp
-        test_desktop/StepperTest.cpp)
+        test_desktop/StepperTest.cpp
+        test_desktop/StepperPlannerCharacterizationTest.cpp)
 
 add_executable(
         angle_test

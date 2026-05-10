@@ -668,9 +668,13 @@ public:
                 {
                     INTERRUPT::setCallback(run_full_multistep_handler);
                 }
-                else
+                else if (run_rest_block_steps > 0)
                 {
                     INTERRUPT::setCallback(run_rest_multistep_handler);
+                }
+                else
+                {
+                    INTERRUPT::setCallback(decelerate_multistep_handler);
                 }
                 INTERRUPT::setInterval(spec.run_interval);
             }

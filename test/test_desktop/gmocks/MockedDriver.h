@@ -16,8 +16,14 @@ struct MockedDriver
 
     static DriverMock *mock;
 
+    static bool inverted;
     static bool direction;
     static int32_t position;
+
+    static void setInverted(bool value)
+    {
+        inverted = value;
+    }
 
     static void step()
     {
@@ -34,6 +40,9 @@ struct MockedDriver
 
 template<uint32_t T_SPR>
 DriverMock* MockedDriver<T_SPR>::mock = nullptr;
+
+template<uint32_t T_SPR>
+bool MockedDriver<T_SPR>::inverted = false;
 
 template<uint32_t T_SPR>
 bool MockedDriver<T_SPR>::direction = false;

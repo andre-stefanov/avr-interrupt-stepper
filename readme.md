@@ -10,6 +10,13 @@ InterruptStepper is a header-only C++17 library for interrupt-driven stepper mot
 
 The package metadata targets Arduino/AVR in PlatformIO. This repository also contains STM32 timer support and a native delegate backend used by the examples and desktop tests.
 
+## What is special about this library
+
+- Optimized for AVR targets. The default pin and timer backends include AVR-specific implementations, and the package metadata is set up for Arduino/AVR projects.
+- No floating-point math in the active movement loop. Once a move is running, the ISR-driven stepping path works with integer intervals and counters rather than runtime float calculations.
+- Direct timer interrupt usage. The AVR backend configures timer registers and compare/overflow interrupts directly instead of routing timing through a higher-level scheduler.
+- Precalculated interval lookup table. `AccelerationRamp` builds the acceleration/deceleration intervals ahead of time so the runtime path can index a lookup table instead of recomputing ramp values on each step.
+
 ## Repository layout
 
 - `include/` contains the public headers.

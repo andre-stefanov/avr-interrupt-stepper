@@ -620,11 +620,27 @@ INSTANTIATE_TEST_SUITE_P(
     TimedMoveBehaviorTest,
     testing::Values(
         TimedMoveTestParams("forward_for_one_second", 5.0f, 1000U, 5),
-        TimedMoveTestParams("backward_for_one_second", -5.0f, 1000U, -5)),
+        TimedMoveTestParams("backward_for_one_second", -5.0f, 1000U, -5),
+        TimedMoveTestParams("forward_for_two_hundred_ms", 5.0f, 200U, 1),
+        TimedMoveTestParams("backward_for_two_hundred_ms", -5.0f, 200U, -1),
+        TimedMoveTestParams("forward_truncates_fractional_step", 2.5f, 1000U, 2),
+        TimedMoveTestParams("backward_truncates_fractional_step", -2.5f, 1000U, -2)),
     [](const TestParamInfo<TimedMoveTestParams> &i)
     {
       return i.param.name;
     });
+
+TEST_F(StepperStateTest, MoveTimeBelowOneStepTerminatesImmediately)
+{
+  EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
+  EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(0);
+  EXPECT_CALL(*Driver::mock, dir(_)).Times(0);
+  EXPECT_CALL(*Driver::mock, step()).Times(0);
+
+  TestStepper::moveTime(2.5f, 399U);
+
+  expectIdleState(0);
+}
 
 TEST_F(StepperStateTest, MoveTimeWithZeroDurationTerminatesImmediately)
 {

@@ -49,14 +49,16 @@ struct RampMovement
       const int8_t runDir,
       const uint32_t runSteps,
       const uint32_t runInterval,
-      const RampStairs &decelStairs)
+      const RampStairs &decelStairs,
+      const bool reuseRunIntervalForFirstDecelStair = false)
       : pre_decel_stairs(preDecelStairs),
         accel_dir(accelDir),
         accel_stairs(accelStairs),
         run_dir(runDir),
         run_steps(runSteps),
         run_interval(runInterval),
-        decel_stairs(decelStairs) {}
+        decel_stairs(decelStairs),
+        reuse_run_interval_for_first_decel_stair(reuseRunIntervalForFirstDecelStair) {}
 
   const RampStairs pre_decel_stairs;
   const int8_t accel_dir;
@@ -65,6 +67,7 @@ struct RampMovement
   const uint32_t run_steps;
   const uint32_t run_interval;
   const RampStairs decel_stairs;
+  const bool reuse_run_interval_for_first_decel_stair;
 
   [[nodiscard]] uint32_t totalSteps() const
   {
@@ -169,7 +172,22 @@ struct PlannerSequenceParams
          0,
          reverseHalfFastRunRestSteps,
          Ramp::REAL_TYPE::interval(reverseHalfFastAccelStairs),
-         RampStairs{reverseHalfFastAccelStairs, 1}}));
+         RampStairs{reverseHalfFastAccelStairs, 1}}),
+      // Hold the same half-fast speed and request exactly the stop distance.
+      // This should skip the run phase entirely and switch straight into deceleration.
+      PlannerSequenceParams(
+        "half_fast_forward_exact_stop_distance_decelerates_immediately",
+        FAST_SPEED / 2,
+        FAST_SPEED / 2,
+        static_cast<int32_t>(halfFastStopSteps),
+        {RampStairs::NONE,
+         0,
+         RampStairs::NONE,
+         0,
+         0,
+         Ramp::REAL_TYPE::getIntervalForSpeed(FAST_SPEED / 2),
+         RampStairs{halfFastStair, 1},
+         true}));
   }
 
   std::string name;
@@ -242,13 +260,19 @@ TEST_P(PlannerSequenceCharacterizationFixture, MoveByFollowsExpectedPlannerShape
     }
 
     EXPECT_CALL(*Interrupt::mock, setInterval(p.expected.run_interval)).RetiresOnSaturation();
-    EXPECT_CALL(*Driver::mock, step()).Times(static_cast<int>(p.expected.run_steps)).RetiresOnSaturation();
+    if (p.expected.run_steps > 0)
+    {
+      EXPECT_CALL(*Driver::mock, step()).Times(static_cast<int>(p.expected.run_steps)).RetiresOnSaturation();
+    }
 
     if (p.expected.decel_stairs)
     {
       for (uint16_t stair = p.expected.decel_stairs.from; stair >= p.expected.decel_stairs.to; stair--)
       {
-        EXPECT_CALL(*Interrupt::mock, setInterval(Ramp::REAL_TYPE::interval(stair))).RetiresOnSaturation();
+        if (!(p.expected.reuse_run_interval_for_first_decel_stair && stair == p.expected.decel_stairs.from))
+        {
+          EXPECT_CALL(*Interrupt::mock, setInterval(Ramp::REAL_TYPE::interval(stair))).RetiresOnSaturation();
+        }
         EXPECT_CALL(*Driver::mock, step())
             .Times(static_cast<int>(Ramp::REAL_TYPE::STEPS_PER_STAIR))
             .RetiresOnSaturation();

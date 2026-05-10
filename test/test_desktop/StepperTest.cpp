@@ -12,8 +12,6 @@
 #include "gmocks/MockedAccelerationRamp.h"
 #include "Stepper.h"
 
-#define SIGN(x) ((x >= 0) ? 1 : -1)
-
 #define RA_DEG_TO_STEPS(deg) ((deg / 360.f) * RA_STEPPER_SPR * RA_MICROSTEPPING * RA_TRANSMISSION)
 
 constexpr auto TRACKING_SPEED = (RA_DEG_TO_STEPS(360.f) / SIDEREAL_SECONDS_PER_DAY);
@@ -71,7 +69,7 @@ struct StepperStopTestParams
   }
 };
 
-struct StepperTestBase : public testing::Test
+struct StepperTestHarness : public testing::Test
 {
   void SetUp() override
   {
@@ -90,14 +88,17 @@ struct StepperTestBase : public testing::Test
 
   void TearDown() override
   {
+    TestStepper::reset();
+
     delete Interrupt::mock;
     delete Driver::mock;
     delete Ramp::mock;
-
-    TestStepper::reset();
   }
+};
 
-  static void prepareSpeed(const float speed)
+struct StepperBehaviorTestBase : public StepperTestHarness
+{
+  static void prepareRunningAtSpeed(const float speed)
   {
     if (speed == 0.0f)
     {
@@ -114,7 +115,7 @@ struct StepperTestBase : public testing::Test
     {
       for (uint32_t stair = 1; stair <= max_stair; stair++)
       {
-        uint32_t interval = Ramp::REAL_TYPE::interval(stair);
+        const uint32_t interval = Ramp::REAL_TYPE::interval(stair);
         EXPECT_CALL(*Interrupt::mock, setInterval(interval)).RetiresOnSaturation();
       }
     }
@@ -126,26 +127,30 @@ struct StepperTestBase : public testing::Test
 
     EXPECT_CALL(*Driver::mock, step()).Times(steps).RetiresOnSaturation();
 
-    TestStepper::moveTo(speed, INT32_MAX);
+    TestStepper::move(speed);
     Interrupt::loopUntilStopped(steps, false);
   }
 };
 
+struct StepperPlannerCharacterizationTestBase : public StepperTestHarness
+{
+};
+
 template <typename T>
-struct StepperTest : public StepperTestBase, public testing::WithParamInterface<T>
+struct StepperBehaviorTest : public StepperBehaviorTestBase, public testing::WithParamInterface<T>
 {
 };
 
-struct StepperStateTest : public StepperTestBase
+struct StepperStateTest : public StepperBehaviorTestBase
 {
 };
 
-using StepperStopTest = StepperTest<StepperStopTestParams>;
+using StepperStopTest = StepperBehaviorTest<StepperStopTestParams>;
 
 TEST_P(StepperStopTest, stop)
 {
   const auto p = GetParam();
-  prepareSpeed(p.initial_speed);
+  prepareRunningAtSpeed(p.initial_speed);
   const int32_t initial_driver_pos = Driver::position;
   const int32_t initial_stepper_pos = TestStepper::getPosition();
 
@@ -286,7 +291,7 @@ TEST_F(StepperStateTest, multistepMoveStateQueriesTrackProgress)
 
 TEST_F(StepperStateTest, stopInvokesCompletionCallbackOnceAfterDeceleration)
 {
-  prepareSpeed(SLEWING_SPEED);
+  prepareRunningAtSpeed(SLEWING_SPEED);
 
   EXPECT_CALL(*Interrupt::mock, stop()).Times(AnyNumber());
   EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
@@ -335,7 +340,7 @@ TEST_F(StepperStateTest, moveToUsesAbsoluteTargetFromCurrentPosition)
 
 TEST_F(StepperStateTest, moveToReachesAbsoluteTargetAfterReversing)
 {
-  prepareSpeed(SLEWING_SPEED);
+  prepareRunningAtSpeed(SLEWING_SPEED);
 
   const int32_t current_pos = TestStepper::getPosition();
   const int32_t target_pos = current_pos - static_cast<int32_t>(Ramp::STEPS_PER_STAIR * 3U);
@@ -354,9 +359,7 @@ TEST_F(StepperStateTest, moveToReachesAbsoluteTargetAfterReversing)
 
   EXPECT_EQ(expected_remaining_steps, TestStepper::distanceToGo());
 
-  const uint32_t limit = static_cast<uint32_t>(current_pos - target_pos)
-      + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR)
-      + 10U;
+  const uint32_t limit = static_cast<uint32_t>(current_pos - target_pos) + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR) + 10U;
 
   Interrupt::loopUntilStopped(limit);
 
@@ -368,7 +371,7 @@ TEST_F(StepperStateTest, moveToReachesAbsoluteTargetAfterReversing)
 
 TEST_F(StepperStateTest, moveByReachesRequestedOffsetAfterReversingThreeStairs)
 {
-  prepareSpeed(SLEWING_SPEED);
+  prepareRunningAtSpeed(SLEWING_SPEED);
 
   const int32_t current_pos = TestStepper::getPosition();
   const int32_t reverse_steps = static_cast<int32_t>(Ramp::STEPS_PER_STAIR * 3U);
@@ -387,9 +390,7 @@ TEST_F(StepperStateTest, moveByReachesRequestedOffsetAfterReversingThreeStairs)
 
   EXPECT_EQ(expected_remaining_steps, TestStepper::distanceToGo());
 
-  const uint32_t limit = static_cast<uint32_t>(reverse_steps)
-      + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR)
-      + 10U;
+  const uint32_t limit = static_cast<uint32_t>(reverse_steps) + 2U * static_cast<uint32_t>(Ramp::STAIRS_COUNT) * static_cast<uint32_t>(Ramp::STEPS_PER_STAIR) + 10U;
 
   Interrupt::loopUntilStopped(limit);
 
@@ -507,13 +508,13 @@ struct StepperCartesianTestParams
   }
 };
 
-using CartesianStepperTest = StepperTest<StepperCartesianTestParams::GtestTuple>;
+using CartesianStepperTest = StepperBehaviorTest<StepperCartesianTestParams::GtestTuple>;
 
 TEST_P(CartesianStepperTest, moveBy)
 {
   const StepperCartesianTestParams &p = StepperCartesianTestParams(GetParam());
 
-  prepareSpeed(p.initial_speed);
+  prepareRunningAtSpeed(p.initial_speed);
 
   EXPECT_CALL(*Interrupt::mock, setInterval(_)).Times(AnyNumber());
   EXPECT_CALL(*Driver::mock, step()).Times(AnyNumber());
@@ -663,9 +664,12 @@ struct RampStepperTestParams
   }
 };
 
-using RampStepperTest = StepperTest<RampStepperTestParams>;
+struct PlannerSequenceCharacterizationFixture : public StepperPlannerCharacterizationTestBase,
+                                                public testing::WithParamInterface<RampStepperTestParams>
+{
+};
 
-TEST_P(RampStepperTest, moveBy)
+TEST_P(PlannerSequenceCharacterizationFixture, moveBy)
 {
   const auto p = GetParam();
 
@@ -739,8 +743,8 @@ TEST_P(RampStepperTest, moveBy)
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    StepperTest,
-    RampStepperTest,
+    StepperPlannerCharacterization,
+    PlannerSequenceCharacterizationFixture,
     RampStepperTestParams::values(),
     [=](const TestParamInfo<RampStepperTestParams> &i)
     {
